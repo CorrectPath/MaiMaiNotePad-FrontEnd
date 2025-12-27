@@ -1,0 +1,121 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* 主题颜色 */
+  --primary-color: #000000; /* 黑色主色调 */
+  --secondary-color: #d4af37; /* 深黄色辅色调 */
+  --text-color: #ffffff;
+  --border-color: #333333;
+  --card-background: #1a1a1a;
+  --hover-color: #2a2a2a;
+
+  color: var(--text-color);
+  background-color: var(--primary-color);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: var(--secondary-color);
+  text-decoration: inherit;
+}
+
+a:hover {
+  color: #e6c25a;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#app {
+  width: 100%;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* Element Plus 样式覆盖 */
+.el-button--primary {
+  background-color: var(--secondary-color);
+  border-color: var(--secondary-color);
+}
+
+.el-button--primary:hover,
+.el-button--primary:focus {
+  background-color: #e6c25a;
+  border-color: #e6c25a;
+}
+
+.el-input__wrapper {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+.el-input__inner {
+  color: var(--text-color);
+  background-color: var(--card-background);
+}
+
+.el-card {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.el-menu {
+  background-color: var(--primary-color);
+  border-right-color: var(--border-color);
+}
+
+.el-menu-item {
+  color: var(--text-color);
+}
+
+.el-menu-item:hover,
+.el-menu-item.is-active {
+  background-color: var(--hover-color);
+  color: var(--secondary-color);
+}
+
+.el-drawer {
+  background-color: var(--card-background);
+  color: var(--text-color);
+}
+
+.el-dialog {
+  background-color: var(--card-background);
+  color: var(--text-color);
+}
+
+.el-dialog__header {
+  border-bottom-color: var(--border-color);
+}
+
+.el-dialog__footer {
+  border-top-color: var(--border-color);
+}
+
+.el-pagination {
+  color: var(--text-color);
+}
+
+.el-pagination__button,
+.el-pager li {
+  background-color: var(--card-background);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.el-pager li:hover,
+.el-pager li.is-active {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
