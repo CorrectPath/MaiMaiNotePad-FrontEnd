@@ -56,7 +56,7 @@ Authorization: Bearer {token}
 
 ### 用户登录
 
-- **路径**: `POST /user/token`
+- **路径**: `POST /token`
 - **描述**: 用户登录获取访问令牌
 - **参数**:
   - `username` (form): 用户名
@@ -83,7 +83,7 @@ Authorization: Bearer {token}
 
 ### 刷新令牌
 
-- **路径**: `POST /user/refresh`
+- **路径**: `POST /refresh`
 - **描述**: 刷新访问令牌
 - **参数**:
   - `refresh_token` (form): 刷新令牌
@@ -102,7 +102,7 @@ Authorization: Bearer {token}
 
 ### 发送验证码
 
-- **路径**: `POST /user/send_verification_code`
+- **路径**: `POST /send_verification_code`
 - **描述**: 发送邮箱验证码
 - **参数**:
   - `email` (form): 邮箱地址
@@ -117,7 +117,7 @@ Authorization: Bearer {token}
 
 ### 发送重置密码验证码
 
-- **路径**: `POST /user/send_reset_password_code`
+- **路径**: `POST /send_reset_password_code`
 - **描述**: 发送重置密码验证码
 - **参数**:
   - `email` (form): 邮箱地址
@@ -132,7 +132,7 @@ Authorization: Bearer {token}
 
 ### 重置密码
 
-- **路径**: `POST /user/reset_password`
+- **路径**: `POST /reset_password`
 - **描述**: 通过邮箱验证码重置密码
 - **参数**:
   - `email` (form): 邮箱地址
@@ -149,7 +149,7 @@ Authorization: Bearer {token}
 
 ### 用户注册
 
-- **路径**: `POST /user/user/register`
+- **路径**: `POST /user/register`
 - **描述**: 用户注册
 - **参数**:
   - `username` (form): 用户名
@@ -167,7 +167,7 @@ Authorization: Bearer {token}
 
 ### 获取当前用户信息
 
-- **路径**: `GET users/me`
+- **路径**: `GET /users/me`
 - **描述**: 获取当前用户信息
 - **认证**: 需要 JWT Token
 - **响应**:
@@ -188,7 +188,7 @@ Authorization: Bearer {token}
 
 ### 修改密码
 
-- **路径**: `PUT users/me/password`
+- **路径**: `PUT /users/me/password`
 - **描述**: 修改当前用户密码
 - **认证**: 需要 JWT Token
 - **参数**:
@@ -210,7 +210,7 @@ Authorization: Bearer {token}
 
 ### 上传头像
 
-- **路径**: `POST users/me/avatar`
+- **路径**: `POST /users/me/avatar`
 - **描述**: 上传/更新用户头像
 - **认证**: 需要 JWT Token
 - **参数**:
@@ -229,7 +229,7 @@ Authorization: Bearer {token}
 
 ### 删除头像
 
-- **路径**: `DELETE users/me/avatar`
+- **路径**: `DELETE /users/me/avatar`
 - **描述**: 删除当前用户头像（恢复为默认头像）
 - **认证**: 需要 JWT Token
 - **响应**:
@@ -241,9 +241,38 @@ Authorization: Bearer {token}
   }
   ```
 
+### 获取用户头像
+
+- **路径**: `GET /users/{user_id}/avatar`
+- **描述**: 获取指定用户的头像
+- **参数**:
+  - `user_id` (path): 用户ID
+  - `size` (query, default=200): 头像大小
+- **响应**: 图片文件
+
+### 获取用户Star记录
+
+- **路径**: `GET /user/stars`
+- **描述**: 获取当前用户的Star记录
+- **认证**: 需要 JWT Token
+- **参数**:
+  - `page` (query, default=1): 页码
+  - `page_size` (query, default=20, max=100): 每页数量
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "获取Star记录成功",
+    "data": [],
+    "page": 1,
+    "page_size": 20,
+    "total": 100
+  }
+  ```
+
 ### 获取用户上传历史
 
-- **路径**: `GET me/upload-history`
+- **路径**: `GET /me/upload-history`
 - **描述**: 获取当前用户的上传历史
 - **认证**: 需要 JWT Token
 - **参数**:
@@ -258,6 +287,24 @@ Authorization: Bearer {token}
     "page": 1,
     "page_size": 20,
     "total": 100
+  }
+  ```
+
+### 获取用户上传统计
+
+- **路径**: `GET /me/upload-stats`
+- **描述**: 获取当前用户的上传统计信息
+- **认证**: 需要 JWT Token
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "获取上传统计成功",
+    "data": {
+      "total_knowledge": 10,
+      "total_persona": 5,
+      "total_downloads": 100
+    }
   }
   ```
 
@@ -293,8 +340,15 @@ Authorization: Bearer {token}
       "updated_at": "2024-01-01T12:00:00Z",
       "downloads": 0,
       "star_count": 0,
-      "tags": "标签",
-      "copyright_owner": "版权所有者"
+      "tags": ["标签"],
+      "copyright_owner": "版权所有者",
+      "files": [],
+      "content": "内容",
+      "base_path": "[]",
+      "download_url": "/api/knowledge/kb_id/download",
+      "size": 1024,
+      "author": "上传者用户名",
+      "author_id": "uploader_id"
     }
   }
   ```
@@ -315,7 +369,36 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "获取公开知识库成功",
-    "data": [],
+    "data": [
+      {
+        "id": "kb_id",
+        "name": "知识库名称",
+        "description": "知识库描述",
+        "uploader_id": "uploader_id",
+        "is_public": true,
+        "is_pending": false,
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "downloads": 10,
+        "star_count": 5,
+        "tags": ["标签1", "标签2"],
+        "copyright_owner": "版权所有者",
+        "files": [
+          {
+            "file_id": "file_id",
+            "original_name": "原始文件名",
+            "file_size": 1024
+          }
+        ],
+        "content": "内容",
+        "base_path": "[]",
+        "download_url": "/api/knowledge/kb_id/download",
+        "size": 1024,
+        "author": "上传者用户名",
+        "author_id": "uploader_id",
+        "version": "1.0"
+      }
+    ],
     "page": 1,
     "page_size": 20,
     "total": 100
@@ -344,9 +427,22 @@ Authorization: Bearer {token}
       "updated_at": "2024-01-01T12:00:00Z",
       "downloads": 10,
       "star_count": 5,
-      "tags": "标签",
+      "tags": ["标签1", "标签2"],
       "copyright_owner": "版权所有者",
-      "files": []
+      "files": [
+        {
+          "file_id": "file_id",
+          "original_name": "原始文件名",
+          "file_size": 1024
+        }
+      ],
+      "content": "内容",
+      "base_path": "[]",
+      "download_url": "/api/knowledge/kb_id/download",
+      "size": 1024,
+      "author": "上传者用户名",
+      "author_id": "uploader_id",
+      "version": "1.0"
     }
   }
   ```
@@ -388,7 +484,36 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "获取用户知识库成功",
-    "data": [],
+    "data": [
+      {
+        "id": "kb_id",
+        "name": "知识库名称",
+        "description": "知识库描述",
+        "uploader_id": "uploader_id",
+        "is_public": true,
+        "is_pending": false,
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "downloads": 10,
+        "star_count": 5,
+        "tags": ["标签1", "标签2"],
+        "copyright_owner": "版权所有者",
+        "files": [
+          {
+            "file_id": "file_id",
+            "original_name": "原始文件名",
+            "file_size": 1024
+          }
+        ],
+        "content": "内容",
+        "base_path": "[]",
+        "download_url": "/api/knowledge/kb_id/download",
+        "size": 1024,
+        "author": "上传者用户名",
+        "author_id": "uploader_id",
+        "version": "1.0"
+      }
+    ],
     "page": 1,
     "page_size": 20,
     "total": 100
@@ -434,13 +559,42 @@ Authorization: Bearer {token}
 - **认证**: 需要 JWT Token
 - **参数**:
   - `kb_id` (path): 知识库ID
-  - `update_data` (body): 更新数据
+  - `name` (form, optional): 知识库名称
+  - `description` (form, optional): 知识库描述
+  - `copyright_owner` (form, optional): 版权所有者
 - **响应**:
   ```json
   {
     "success": true,
     "message": "修改知识库成功",
-    "data": {}
+    "data": {
+      "id": "kb_id",
+      "name": "知识库名称",
+      "description": "知识库描述",
+      "uploader_id": "uploader_id",
+      "is_public": true,
+      "is_pending": false,
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z",
+      "downloads": 10,
+      "star_count": 5,
+      "tags": ["标签1", "标签2"],
+      "copyright_owner": "版权所有者",
+      "files": [
+        {
+          "file_id": "file_id",
+          "original_name": "原始文件名",
+          "file_size": 1024
+        }
+      ],
+      "content": "内容",
+      "base_path": "[]",
+      "download_url": "/api/knowledge/kb_id/download",
+      "size": 1024,
+      "author": "上传者用户名",
+      "author_id": "uploader_id",
+      "version": "1.0"
+    }
   }
   ```
 
@@ -478,6 +632,41 @@ Authorization: Bearer {token}
   }
   ```
 
+### 删除知识库
+
+- **路径**: `DELETE /knowledge/{kb_id}`
+- **描述**: 删除知识库
+- **认证**: 需要 JWT Token
+- **参数**:
+  - `kb_id` (path): 知识库ID
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "知识库删除成功",
+    "data": null
+  }
+  ```
+
+### 下载知识库
+
+- **路径**: `GET /knowledge/{kb_id}/download`
+- **描述**: 下载知识库文件
+- **认证**: 需要 JWT Token
+- **参数**:
+  - `kb_id` (path): 知识库ID
+- **响应**: 文件下载
+
+### 获取知识库文件
+
+- **路径**: `GET /knowledge/{kb_id}/file/{file_id}`
+- **描述**: 获取知识库中的特定文件
+- **认证**: 需要 JWT Token
+- **参数**:
+  - `kb_id` (path): 知识库ID
+  - `file_id` (path): 文件ID
+- **响应**: 文件内容
+
 ---
 
 ## 人设卡接口
@@ -510,8 +699,17 @@ Authorization: Bearer {token}
       "updated_at": "2024-01-01T12:00:00Z",
       "downloads": 0,
       "star_count": 0,
-      "tags": "标签",
-      "copyright_owner": "版权所有者"
+      "tags": ["标签1", "标签2"],
+      "copyright_owner": "版权所有者",
+      "files": [],
+      "content": "内容",
+      "base_path": "base_path",
+      "download_url": "/api/persona/pc_id/download",
+      "size": 1024,
+      "author": "上传者用户名",
+      "author_id": "uploader_id",
+      "version": "1.0",
+      "stars": 0
     }
   }
   ```
@@ -536,17 +734,31 @@ Authorization: Bearer {token}
       {
         "id": "pc_id",
         "name": "人设卡名称",
-        "author": "作者名称",
-        "author_id": "author_id",
-        "uploader_id": "uploader_id",
         "description": "人设卡描述",
-        "created_at": "2024-01-01T12:00:00Z",
-        "updated_at": "2024-01-01T12:00:00Z",
+        "uploader_id": "uploader_id",
         "is_public": true,
         "is_pending": false,
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
         "downloads": 10,
         "star_count": 5,
-        "tags": ["标签1", "标签2"]
+        "tags": ["标签1", "标签2"],
+        "copyright_owner": "版权所有者",
+        "files": [
+          {
+            "file_id": "file_id",
+            "original_name": "原始文件名",
+            "file_size": 1024
+          }
+        ],
+        "content": "内容",
+        "base_path": "base_path",
+        "download_url": "/api/persona/pc_id/download",
+        "size": 1024,
+        "author": "上传者用户名",
+        "author_id": "uploader_id",
+        "version": "1.0",
+        "stars": 5
       }
     ],
     "page": 1,
@@ -569,21 +781,16 @@ Authorization: Bearer {token}
     "data": {
       "id": "pc_id",
       "name": "人设卡名称",
-      "author": "作者名称",
-      "author_id": "author_id",
-      "uploader_id": "uploader_id",
       "description": "人设卡描述",
-      "content": null,
-      "copyright_owner": "版权所有者",
-      "created_at": "2024-01-01T12:00:00Z",
-      "updated_at": "2024-01-01T12:00:00Z",
+      "uploader_id": "uploader_id",
       "is_public": true,
       "is_pending": false,
-      "rejection_reason": null,
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z",
       "downloads": 10,
       "star_count": 5,
-      "stars": 5,
       "tags": ["标签1", "标签2"],
+      "copyright_owner": "版权所有者",
       "files": [
         {
           "file_id": "file_id",
@@ -591,11 +798,14 @@ Authorization: Bearer {token}
           "file_size": 1024
         }
       ],
+      "content": "内容",
+      "base_path": "base_path",
       "download_url": "/api/persona/pc_id/download",
-      "base_path": "uploads/persona/uploader_id_timestamp",
-      "preview_url": null,
       "size": 1024,
-      "version": "1.0"
+      "author": "上传者用户名",
+      "author_id": "uploader_id",
+      "version": "1.0",
+      "stars": 5
     }
   }
   ```
@@ -637,7 +847,37 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "用户人设卡获取成功",
-    "data": [],
+    "data": [
+      {
+        "id": "pc_id",
+        "name": "人设卡名称",
+        "description": "人设卡描述",
+        "uploader_id": "uploader_id",
+        "is_public": true,
+        "is_pending": false,
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "downloads": 10,
+        "star_count": 5,
+        "tags": ["标签1", "标签2"],
+        "copyright_owner": "版权所有者",
+        "files": [
+          {
+            "file_id": "file_id",
+            "original_name": "原始文件名",
+            "file_size": 1024
+          }
+        ],
+        "content": "内容",
+        "base_path": "base_path",
+        "download_url": "/api/persona/pc_id/download",
+        "size": 1024,
+        "author": "上传者用户名",
+        "author_id": "uploader_id",
+        "version": "1.0",
+        "stars": 5
+      }
+    ],
     "page": 1,
     "page_size": 20,
     "total": 100
@@ -659,7 +899,35 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "人设卡更新成功",
-    "data": {}
+    "data": {
+      "id": "pc_id",
+      "name": "人设卡名称",
+      "description": "人设卡描述",
+      "uploader_id": "uploader_id",
+      "is_public": true,
+      "is_pending": false,
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z",
+      "downloads": 10,
+      "star_count": 5,
+      "tags": ["标签1", "标签2"],
+      "copyright_owner": "版权所有者",
+      "files": [
+        {
+          "file_id": "file_id",
+          "original_name": "原始文件名",
+          "file_size": 1024
+        }
+      ],
+      "content": "内容",
+      "base_path": "base_path",
+      "download_url": "/api/persona/pc_id/download",
+      "size": 1024,
+      "author": "上传者用户名",
+      "author_id": "uploader_id",
+      "version": "1.0",
+      "stars": 5
+    }
   }
   ```
 
@@ -745,6 +1013,25 @@ Authorization: Bearer {token}
   }
   ```
 
+### 下载人设卡
+
+- **路径**: `GET /persona/{pc_id}/download`
+- **描述**: 下载人设卡文件
+- **认证**: 需要 JWT Token
+- **参数**:
+  - `pc_id` (path): 人设卡ID
+- **响应**: 文件下载
+
+### 获取人设卡文件
+
+- **路径**: `GET /persona/{pc_id}/file/{file_id}`
+- **描述**: 获取人设卡中的特定文件
+- **认证**: 需要 JWT Token
+- **参数**:
+  - `pc_id` (path): 人设卡ID
+  - `file_id` (path): 文件ID
+- **响应**: 文件内容
+
 ---
 
 ## 消息接口
@@ -820,7 +1107,20 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "消息列表获取成功",
-    "data": []
+    "data": [
+      {
+        "id": "message_id",
+        "sender_id": "发送者ID",
+        "recipient_id": "接收者ID",
+        "title": "消息标题",
+        "content": "消息内容",
+        "summary": "消息摘要",
+        "message_type": "消息类型",
+        "broadcast_scope": "广播范围",
+        "is_read": false,
+        "created_at": "2024-01-01T12:00:00Z"
+      }
+    ]
   }
   ```
 
@@ -865,7 +1165,9 @@ Authorization: Bearer {token}
 - **认证**: 需要 JWT Token
 - **参数**:
   - `message_id` (path): 消息ID
-  - `update_data` (body): 更新数据
+  - `title` (body, optional): 消息标题
+  - `content` (body, optional): 消息内容
+  - `summary` (body, optional): 消息摘要
 - **响应**:
   ```json
   {
@@ -890,7 +1192,20 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "广播消息历史获取成功",
-    "data": []
+    "data": [
+      {
+        "id": "message_id",
+        "sender_id": "发送者ID",
+        "recipient_id": "接收者ID",
+        "title": "消息标题",
+        "content": "消息内容",
+        "summary": "消息摘要",
+        "message_type": "消息类型",
+        "broadcast_scope": "广播范围",
+        "is_read": false,
+        "created_at": "2024-01-01T12:00:00Z"
+      }
+    ]
   }
   ```
 
@@ -931,7 +1246,15 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "获取最近用户成功",
-    "data": [],
+    "data": [
+      {
+        "id": "user_id",
+        "username": "用户名",
+        "email": "邮箱",
+        "role": "角色",
+        "createdAt": "2024-01-01T12:00:00Z"
+      }
+    ],
     "page": 1,
     "page_size": 10,
     "total": 100
@@ -953,7 +1276,18 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "获取用户列表成功",
-    "data": [],
+    "data": [
+      {
+        "id": "user_id",
+        "username": "用户名",
+        "email": "邮箱",
+        "role": "角色",
+        "is_active": true,
+        "createdAt": "2024-01-01T12:00:00Z",
+        "knowledgeCount": 5,
+        "personaCount": 3
+      }
+    ],
     "page": 1,
     "page_size": 20,
     "total": 100
@@ -967,12 +1301,7 @@ Authorization: Bearer {token}
 - **认证**: 需要 JWT Token（admin权限）
 - **参数**:
   - `user_id` (path): 用户ID
-  - `role_data` (body):
-    ```json
-    {
-      "role": "user/moderator/admin"
-    }
-    ```
+  - `role` (body): 角色 (user/moderator/admin)
 - **响应**:
   ```json
   {
@@ -1048,10 +1377,235 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "获取知识库成功",
-    "data": [],
+    "data": [
+      {
+        "id": "kb_id",
+        "name": "知识库名称",
+        "description": "知识库描述",
+        "uploader_id": "uploader_id",
+        "is_public": true,
+        "is_pending": false,
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "downloads": 10,
+        "star_count": 5,
+        "tags": ["标签1", "标签2"],
+        "copyright_owner": "版权所有者",
+        "files": [
+          {
+            "file_id": "file_id",
+            "original_name": "原始文件名",
+            "file_size": 1024
+          }
+        ],
+        "content": "内容",
+        "base_path": "[]",
+        "download_url": "/api/knowledge/kb_id/download",
+        "size": 1024,
+        "author": "上传者用户名",
+        "author_id": "uploader_id",
+        "version": "1.0"
+      }
+    ],
     "page": 1,
     "page_size": 20,
     "total": 100
+  }
+  ```
+
+### 获取所有人设卡（管理员视图）
+
+- **路径**: `GET /admin/persona/all`
+- **描述**: 获取所有人设卡（管理员视图，仅限admin）
+- **认证**: 需要 JWT Token（admin权限）
+- **参数**:
+  - `page` (query, default=1): 页码
+  - `page_size` (query, default=20): 每页数量
+  - `status` (query, optional): 状态筛选（pending/approved/rejected）
+  - `search` (query, optional): 搜索名称或描述
+  - `uploader` (query, optional): 上传者ID或用户名
+  - `order_by` (query, default="created_at"): 排序字段
+  - `order_dir` (query, default="desc"): 排序方向
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "获取人设卡成功",
+    "data": [
+      {
+        "id": "pc_id",
+        "name": "人设卡名称",
+        "description": "人设卡描述",
+        "uploader_id": "uploader_id",
+        "is_public": true,
+        "is_pending": false,
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "downloads": 10,
+        "star_count": 5,
+        "tags": ["标签1", "标签2"],
+        "copyright_owner": "版权所有者",
+        "files": [
+          {
+            "file_id": "file_id",
+            "original_name": "原始文件名",
+            "file_size": 1024
+          }
+        ],
+        "content": "内容",
+        "base_path": "base_path",
+        "download_url": "/api/persona/pc_id/download",
+        "size": 1024,
+        "author": "上传者用户名",
+        "author_id": "uploader_id",
+        "version": "1.0",
+        "stars": 5
+      }
+    ],
+    "page": 1,
+    "page_size": 20,
+    "total": 100
+  }
+  ```
+
+### 撤销知识库审核
+
+- **路径**: `POST /admin/knowledge/{kb_id}/revert`
+- **描述**: 撤销知识库审核状态（仅限admin）
+- **认证**: 需要 JWT Token（admin权限）
+- **参数**:
+  - `kb_id` (path): 知识库ID
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "知识库审核状态已撤销",
+    "data": null
+  }
+  ```
+
+### 撤销人设卡审核
+
+- **路径**: `POST /admin/persona/{pc_id}/revert`
+- **描述**: 撤销人设卡审核状态（仅限admin）
+- **认证**: 需要 JWT Token（admin权限）
+- **参数**:
+  - `pc_id` (path): 人设卡ID
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "人设卡审核状态已撤销",
+    "data": null
+  }
+  ```
+
+### 获取上传历史（管理员）
+
+- **路径**: `GET /admin/upload-history`
+- **描述**: 获取上传历史（仅限admin）
+- **认证**: 需要 JWT Token（admin权限）
+- **参数**:
+  - `page` (query, default=1): 页码
+  - `page_size` (query, default=20): 每页数量
+  - `type` (query, optional): 上传类型 (knowledge/persona)
+  - `status` (query, optional): 状态 (pending/approved/rejected)
+  - `uploader` (query, optional): 上传者ID或用户名
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "获取上传历史成功",
+    "data": [
+      {
+        "id": "record_id",
+        "uploader_id": "上传者ID",
+        "target_id": "目标ID",
+        "target_type": "目标类型",
+        "name": "名称",
+        "description": "描述",
+        "status": "状态",
+        "created_at": "2024-01-01T12:00:00Z"
+      }
+    ],
+    "page": 1,
+    "page_size": 20,
+    "total": 100
+  }
+  ```
+
+### 获取上传统计（管理员）
+
+- **路径**: `GET /admin/upload-stats`
+- **描述**: 获取上传统计信息（仅限admin）
+- **认证**: 需要 JWT Token（admin权限）
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "获取上传统计成功",
+    "data": {
+      "total_knowledge": 50,
+      "total_persona": 30,
+      "pending_knowledge": 5,
+      "pending_persona": 3,
+      "today_knowledge": 2,
+      "today_persona": 1
+    }
+  }
+  ```
+
+### 批量删除消息
+
+- **路径**: `POST /admin/messages/batch-delete`
+- **描述**: 批量删除消息（仅限admin）
+- **认证**: 需要 JWT Token（admin权限）
+- **参数**:
+  ```json
+  {
+    "message_ids": ["消息ID列表"]
+  }
+  ```
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "消息批量删除成功",
+    "data": {
+      "deleted_count": 5
+    }
+  }
+  ```
+
+### 删除上传记录
+
+- **路径**: `DELETE /admin/uploads/{upload_id}`
+- **描述**: 删除上传记录（仅限admin）
+- **认证**: 需要 JWT Token（admin权限）
+- **参数**:
+  - `upload_id` (path): 上传记录ID
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "上传记录删除成功",
+    "data": null
+  }
+  ```
+
+### 重新处理上传
+
+- **路径**: `POST /admin/uploads/{upload_id}/reprocess`
+- **描述**: 重新处理上传（仅限admin）
+- **认证**: 需要 JWT Token（admin权限）
+- **参数**:
+  - `upload_id` (path): 上传记录ID
+- **响应**:
+  ```json
+  {
+    "success": true,
+    "message": "上传重新处理成功",
+    "data": null
   }
   ```
 
@@ -1076,7 +1630,36 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "获取待审核知识库成功",
-    "data": [],
+    "data": [
+      {
+        "id": "kb_id",
+        "name": "知识库名称",
+        "description": "知识库描述",
+        "uploader_id": "uploader_id",
+        "is_public": false,
+        "is_pending": true,
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "downloads": 0,
+        "star_count": 0,
+        "tags": ["标签1", "标签2"],
+        "copyright_owner": "版权所有者",
+        "files": [
+          {
+            "file_id": "file_id",
+            "original_name": "原始文件名",
+            "file_size": 1024
+          }
+        ],
+        "content": "内容",
+        "base_path": "[]",
+        "download_url": "/api/knowledge/kb_id/download",
+        "size": 1024,
+        "author": "上传者用户名",
+        "author_id": "uploader_id",
+        "version": "1.0"
+      }
+    ],
     "page": 1,
     "page_size": 10,
     "total": 100
@@ -1100,7 +1683,37 @@ Authorization: Bearer {token}
   {
     "success": true,
     "message": "获取待审核人设卡成功",
-    "data": [],
+    "data": [
+      {
+        "id": "pc_id",
+        "name": "人设卡名称",
+        "description": "人设卡描述",
+        "uploader_id": "uploader_id",
+        "is_public": false,
+        "is_pending": true,
+        "created_at": "2024-01-01T12:00:00Z",
+        "updated_at": "2024-01-01T12:00:00Z",
+        "downloads": 0,
+        "star_count": 0,
+        "tags": ["标签1", "标签2"],
+        "copyright_owner": "版权所有者",
+        "files": [
+          {
+            "file_id": "file_id",
+            "original_name": "原始文件名",
+            "file_size": 1024
+          }
+        ],
+        "content": "内容",
+        "base_path": "base_path",
+        "download_url": "/api/persona/pc_id/download",
+        "size": 1024,
+        "author": "上传者用户名",
+        "author_id": "uploader_id",
+        "version": "1.0",
+        "stars": 0
+      }
+    ],
     "page": 1,
     "page_size": 10,
     "total": 100

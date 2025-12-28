@@ -80,11 +80,11 @@
         <div class="card-description">{{ card.description }}</div>
         <div class="card-stats">
           <span class="stat-item">
-            <Download :size="16" />
+            <el-icon><Download /></el-icon>
             {{ card.downloads }}
           </span>
           <span class="stat-item">
-            <Star :size="16" />
+            <el-icon><Star /></el-icon>
             {{ card.star_count }}
           </span>
         </div>
@@ -104,16 +104,14 @@
       ></el-pagination>
     </div>
 
-    <!-- 详情弹窗 -->
-    <el-dialog
+    <!-- 详情抽屉 -->
+    <el-drawer
       v-model="dialogVisible"
       :title="selectedCard.name"
-      width="60%"
-      class="detail-dialog"
-      :custom-class="'right-dialog'"
-      top="0px"
-      :destroy-on-close="true"
-      :modal="false"
+      direction="rtl"
+      size="40%"
+      :with-header="true"
+      destroy-on-close
     >
       <div class="dialog-content">
         <!-- 基本信息 -->
@@ -164,7 +162,7 @@
           </el-table>
         </div>
       </div>
-    </el-dialog>
+    </el-drawer>
   </div>
 </template>
 
@@ -550,40 +548,37 @@ onMounted(() => {
   margin-top: 20px;
 }
 
-.detail-dialog {
-  .el-dialog__header {
-    border-bottom-color: var(--border-color);
-  }
-  
-  .el-dialog__footer {
-    border-top-color: var(--border-color);
-  }
-}
-
-/* 右侧弹窗样式 */
-.right-dialog {
-  margin: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
-  transform: translate(0, 0);
-  border-radius: 0;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
+/* 抽屉样式 */
+:deep(.el-drawer) {
   background-color: var(--card-background);
   border-left: 1px solid var(--border-color);
 }
 
-.right-dialog .el-dialog__body {
-  flex: 1;
+:deep(.el-drawer__header) {
+  border-bottom: 1px solid var(--border-color);
+  padding: 20px;
+}
+
+:deep(.el-drawer__body) {
   overflow-y: auto;
   padding: 20px;
 }
 
-.right-dialog .el-dialog__header {
-  padding: 20px;
-  border-bottom: 1px solid var(--border-color);
+:deep(.el-drawer__headerbtn) {
+  top: 20px;
+  right: 20px;
+}
+
+/* 增大收藏按钮尺寸 */
+.star-button {
+  font-size: 24px !important;
+  padding: 4px !important;
+  color: #999 !important;
+  transform: scale(1.2); /* 放大按钮 */
+}
+
+.star-button:hover {
+  color: #f90 !important;
 }
 
 .right-dialog .el-dialog__headerbtn {
