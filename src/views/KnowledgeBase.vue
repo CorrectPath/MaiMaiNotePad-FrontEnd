@@ -1,107 +1,113 @@
 <template>
   <div class="knowledge-base-container">
-    <!-- 搜索栏 -->
-    <div class="search-section">
-      <el-card shadow="hover" class="search-card">
-        <el-form :model="searchForm" class="search-form" label-width="100px">
-          <el-row :gutter="20">
-            <el-col :span="8">
-              <el-form-item label="名称">
-                <el-input
-                  v-model="searchForm.name"
-                  placeholder="请输入知识库名称"
-                ></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="作者">
-                <el-input
-                  v-model="searchForm.uploader_id"
-                  placeholder="请输入作者ID"
-                ></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="标签">
-                <el-input
-                  v-model="searchForm.tag"
-                  placeholder="请输入标签"
-                ></el-input>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="排序字段">
-                <el-select v-model="searchForm.sort_by" placeholder="请选择排序字段">
-                  <el-option label="创建时间" value="created_at"></el-option>
-                  <el-option label="更新时间" value="updated_at"></el-option>
-                  <el-option label="名称" value="name"></el-option>
-                  <el-option label="下载量" value="downloads"></el-option>
-                  <el-option label="收藏量" value="star_count"></el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8">
-              <el-form-item label="排序顺序">
-                <el-select v-model="searchForm.sort_order" placeholder="请选择排序顺序">
-                  <el-option label="升序" value="asc"></el-option>
-                  <el-option label="降序" value="desc"></el-option>
-                </el-select>
-              </el-form-item>
-            </el-col>
-            <el-col :span="8" class="search-buttons">
-              <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
-              <el-button @click="resetSearch" class="reset-btn">重置</el-button>
-            </el-col>
-          </el-row>
-        </el-form>
-      </el-card>
-    </div>
+    <div class="layout-container">
+      <!-- 搜索栏 -->
+      <div class="search-section">
+        <el-card shadow="hover" class="search-card">
+          <el-form :model="searchForm" class="search-form" label-width="100px">
+            <el-row :gutter="20">
+              <el-col :span="8">
+                <el-form-item label="名称">
+                  <el-input
+                    v-model="searchForm.name"
+                    placeholder="请输入知识库名称"
+                  ></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="作者">
+                  <el-input
+                    v-model="searchForm.uploader_id"
+                    placeholder="请输入作者ID"
+                  ></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="标签">
+                  <el-input
+                    v-model="searchForm.tag"
+                    placeholder="请输入标签"
+                  ></el-input>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="排序字段">
+                  <el-select v-model="searchForm.sort_by" placeholder="请选择排序字段">
+                    <el-option label="创建时间" value="created_at"></el-option>
+                    <el-option label="更新时间" value="updated_at"></el-option>
+                    <el-option label="名称" value="name"></el-option>
+                    <el-option label="下载量" value="downloads"></el-option>
+                    <el-option label="收藏量" value="star_count"></el-option>
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8">
+                <el-form-item label="排序顺序">
+                  <el-select v-model="searchForm.sort_order" placeholder="请选择排序顺序">
+                    <el-option label="升序" value="asc"></el-option>
+                    <el-option label="降序" value="desc"></el-option>
+                  </el-select>
+                </el-form-item>
+              </el-col>
+              <el-col :span="8" class="search-buttons">
+                <el-form-item>
+                <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
+                <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+                </el-form-item>
+              </el-col>
+            </el-row>
+          </el-form>
+        </el-card>
+      </div>
 
-    <!-- 知识库列表 -->
-    <div class="knowledge-base-list">
-      <el-card
-        v-for="kb in knowledgeBases"
-        :key="kb.id"
-        shadow="hover"
-        class="knowledge-base-item"
-        @click="showKBDetail(kb)"
-      >
-        <div class="card-header">
-          <h3 class="card-name">{{ kb.name }}</h3>
-          <el-button
-            :icon="kb.isStarred ? StarFilled : Star"
-            type="text"
-            class="star-button"
-            @click.stop="toggleStar(kb)"
-            :style="{ color: kb.isStarred ? '#f90' : '#999' }"
-          ></el-button>
+      <!-- 知识库列表 -->
+      <div class="knowledge-base-list-container">
+        <div class="knowledge-base-list">
+          <el-card
+            v-for="kb in knowledgeBases"
+            :key="kb.id"
+            shadow="hover"
+            class="knowledge-base-item"
+            @click="showKBDetail(kb)"
+          >
+            <div class="card-header">
+              <h3 class="card-name">{{ kb.name }}</h3>
+              <el-button
+                :icon="kb.isStarred ? StarFilled : Star"
+                type="text"
+                class="star-button"
+                @click.stop="toggleStar(kb)"
+                :style="{ color: kb.isStarred ? '#f90' : '#999' }"
+              ></el-button>
+            </div>
+            <div class="card-author">{{ kb.author ? `作者: ${kb.author}` : '作者: 用户已注销' }}</div>
+            <div class="card-description">{{ kb.description }}</div>
+            <div class="card-stats">
+              <span class="stat-item">
+                <el-icon><Download /></el-icon>
+                {{ kb.downloads }}
+              </span>
+              <span class="stat-item">
+                <el-icon><Star /></el-icon>
+                {{ kb.star_count }}
+              </span>
+            </div>
+          </el-card>
         </div>
-        <div class="card-author">{{ kb.author ? `作者: ${kb.author}` : '作者: 用户已注销' }}</div>
-        <div class="card-description">{{ kb.description }}</div>
-        <div class="card-stats">
-          <span class="stat-item">
-            <el-icon><Download /></el-icon>
-            {{ kb.downloads }}
-          </span>
-          <span class="stat-item">
-            <el-icon><Star /></el-icon>
-            {{ kb.star_count }}
-          </span>
-        </div>
-      </el-card>
-    </div>
+      </div>
 
-    <!-- 分页 -->
-    <div class="pagination-section">
-      <el-pagination
-        v-model:current-page="pagination.currentPage"
-        v-model:page-size="pagination.pageSize"
-        :page-sizes="[12, 24, 36, 48]"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="pagination.total"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      ></el-pagination>
+      <!-- 分页 -->
+      <div class="pagination-section">
+        <el-pagination
+          v-model:current-page="pagination.currentPage"
+          v-model:page-size="pagination.pageSize"
+          :page-sizes="[12, 24, 36, 48]"
+          layout="total, sizes, prev, pager, next, jumper"
+          :total="pagination.total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        ></el-pagination>
+      </div>
     </div>
 
     <!-- 详情抽屉 -->
@@ -454,6 +460,17 @@ onMounted(() => {
 .knowledge-base-container {
   width: 100%;
   height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .search-section {
@@ -480,11 +497,16 @@ onMounted(() => {
   border-color: var(--secondary-color);
 }
 
+.knowledge-base-list-container {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
 .knowledge-base-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 20px;
-  margin-bottom: 20px;
 }
 
 .knowledge-base-item {
