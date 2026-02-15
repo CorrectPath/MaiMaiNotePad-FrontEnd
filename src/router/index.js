@@ -4,8 +4,10 @@ import Register from '../views/Register.vue'
 import Home from '../views/Home.vue'
 import PersonaCard from '../views/PersonaCard.vue'
 import KnowledgeBase from '../views/KnowledgeBase.vue'
+import MyKnowledge from '../views/MyKnowledge.vue'
 import UserCenter from '../views/UserCenter.vue'
 import ResetPassword from '../views/ResetPassword.vue'
+import KnowledgeUpload from '../views/KnowledgeUpload.vue'
 
 const routes = [
   {
@@ -58,7 +60,23 @@ const routes = [
         name: 'KnowledgeBase',
         component: KnowledgeBase,
         meta: {
-          pageTitle: '知识库'
+          pageTitle: '知识库广场'
+        }
+      },
+      {
+        path: '/my-knowledge',
+        name: 'MyKnowledge',
+        component: MyKnowledge,
+        meta: {
+          pageTitle: '我的知识库'
+        }
+      },
+      {
+        path: '/knowledge-upload',
+        name: 'KnowledgeUpload',
+        component: KnowledgeUpload,
+        meta: {
+          pageTitle: '上传知识库'
         }
       },
       {

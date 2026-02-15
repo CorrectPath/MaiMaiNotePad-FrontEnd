@@ -30,3 +30,40 @@ export const unstarKnowledgeBase = (kb_id) => {
 export const getUserKnowledgeBase = (user_id, params = {}) => {
   return apiClient.get(`/knowledge/user/${user_id}`, { params })
 }
+
+// 上传知识库
+export const uploadKnowledgeBase = (formData) => {
+  return apiClient.post('/knowledge/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+// 更新知识库信息
+export const updateKnowledgeBase = (kb_id, payload) => {
+  return apiClient.put(`/knowledge/${kb_id}`, payload)
+}
+
+// 删除知识库
+export const deleteKnowledgeBase = (kb_id) => {
+  return apiClient.delete(`/knowledge/${kb_id}`)
+}
+
+// 为知识库追加文件
+export const addFilesToKnowledgeBase = (kb_id, files) => {
+  const formData = new FormData()
+  for (let i = 0; i < files.length; i++) {
+    formData.append('files', files[i])
+  }
+  return apiClient.post(`/knowledge/${kb_id}/files`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  })
+}
+
+// 从知识库删除单个文件
+export const deleteFileFromKnowledgeBase = (kb_id, file_id) => {
+  return apiClient.delete(`/knowledge/${kb_id}/${file_id}`)
+}

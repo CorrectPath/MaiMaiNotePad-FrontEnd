@@ -23,12 +23,20 @@
           </el-icon>
           <span class="menu-label">人设卡</span>
         </el-menu-item>
-        <el-menu-item index="/knowledge-base">
-          <el-icon>
-            <Collection />
-          </el-icon>
-          <span class="menu-label">知识库</span>
-        </el-menu-item>
+        <el-sub-menu index="/knowledge-group">
+          <template #title>
+            <el-icon>
+              <Collection />
+            </el-icon>
+            <span class="menu-label">知识库</span>
+          </template>
+          <el-menu-item index="/knowledge-base">
+            <span class="menu-label">知识库广场</span>
+          </el-menu-item>
+          <el-menu-item index="/my-knowledge">
+            <span class="menu-label">我的知识库</span>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </aside>
 
