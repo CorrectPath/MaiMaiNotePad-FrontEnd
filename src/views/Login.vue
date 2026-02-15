@@ -31,7 +31,10 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleLogin" class="login-btn">登录</el-button>
-          <el-link type="primary" @click="$router.push('/register')" class="register-link">去注册</el-link>
+          <div class="link-row">
+            <el-link type="primary" @click="$router.push('/register')" class="link-item">去注册</el-link>
+            <el-link type="primary" @click="$router.push('/reset-password')" class="link-item">忘记密码</el-link>
+          </div>
         </el-form-item>
       </el-form>
     </div>
@@ -161,8 +164,13 @@ h3 {
   border-color: var(--secondary-color);
 }
 
-.register-link {
-  display: block;
-  text-align: center;
+.link-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.link-item {
+  font-size: 14px;
 }
 </style>

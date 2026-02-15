@@ -5,6 +5,7 @@ import Home from '../views/Home.vue'
 import PersonaCard from '../views/PersonaCard.vue'
 import KnowledgeBase from '../views/KnowledgeBase.vue'
 import UserCenter from '../views/UserCenter.vue'
+import ResetPassword from '../views/ResetPassword.vue'
 
 const routes = [
   {
@@ -20,6 +21,11 @@ const routes = [
     path: '/register',
     name: 'Register',
     component: Register
+  },
+  {
+    path: '/reset-password',
+    name: 'ResetPassword',
+    component: ResetPassword
   },
   {
     path: '/home',
