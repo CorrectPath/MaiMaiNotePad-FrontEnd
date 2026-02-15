@@ -29,6 +29,18 @@ export const register = (username, password, email, verification_code) => {
   })
 }
 
+export const checkRegisterLegality = (username, email) => {
+  const params = new URLSearchParams()
+  params.append('username', username)
+  params.append('email', email)
+
+  return apiClient.post('/user/check_register', params, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  })
+}
+
 // 发送验证码
 export const sendVerificationCode = (email) => {
   const params = new URLSearchParams()

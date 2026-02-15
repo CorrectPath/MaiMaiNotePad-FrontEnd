@@ -26,12 +26,25 @@
             show-password
           ></el-input>
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
+        <el-form-item label="确认密码" prop="confirm_password">
           <el-input
-            v-model="registerForm.email"
-            placeholder="请输入邮箱"
-            :prefix-icon="Message"
+            v-model="registerForm.confirm_password"
+            type="password"
+            placeholder="请再次输入密码"
+            :prefix-icon="Lock"
+            show-password
           ></el-input>
+        </el-form-item>
+        <el-form-item label="邮箱" prop="email">
+          <div class="email-input-wrapper">
+            <el-input
+              v-model="registerForm.emailLocal"
+              placeholder="请输入邮箱"
+              :prefix-icon="Message"
+              style="flex: 1"
+            ></el-input>
+            <span class="email-suffix">.com</span>
+          </div>
         </el-form-item>
         <el-form-item label="验证码" prop="verification_code">
           <div class="code-input-wrapper">
@@ -65,7 +78,7 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock, Message, CircleCheck } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { register, sendVerificationCode as sendVerificationCodeApi } from '@/api/user'
+import { register, sendVerificationCode as sendVerificationCodeApi, checkRegisterLegality } from '@/api/user'
 import { handleApiError } from '@/utils/api'
 
 const router = useRouter()
@@ -77,6 +90,8 @@ const registerForm = reactive({
   username: '',
   password: '',
   email: '',
+  emailLocal: '',
+  confirm_password: '',
   verification_code: ''
 })
 
@@ -89,9 +104,39 @@ const registerRules = {
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 30, message: '密码长度在 6 到 30 个字符', trigger: 'blur' }
   ],
+  confirm_password: [
+    { required: true, message: '请再次输入密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (!value) {
+          callback(new Error('请再次输入密码'))
+        } else if (value !== registerForm.password) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: ['blur', 'change']
+    }
+  ],
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入有效的邮箱地址', trigger: ['blur', 'change'] }
+    {
+      validator: (rule, value, callback) => {
+        const fullEmail = registerForm.emailLocal + '.com'
+        if (!fullEmail) {
+          callback(new Error('请输入邮箱'))
+        } else {
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+          if (!emailRegex.test(fullEmail)) {
+            callback(new Error('请输入有效的邮箱地址'))
+          } else {
+            callback()
+          }
+        }
+      },
+      trigger: ['blur', 'change']
+    }
   ],
   verification_code: [
     { required: true, message: '请输入验证码', trigger: 'blur' }
@@ -99,21 +144,28 @@ const registerRules = {
 }
 
 const sendVerificationCode = async () => {
-  if (!registerForm.email) {
-    ElMessage.warning('请先输入邮箱地址')
+  if (!registerForm.username) {
+    ElMessage.warning('请先输入用户名')
     return
   }
 
-  // 验证邮箱格式
+  if (!registerForm.emailLocal) {
+    ElMessage.warning('请先输入邮箱前缀')
+    return
+  }
+
+  const fullEmail = registerForm.emailLocal + '.com'
+
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  if (!emailRegex.test(registerForm.email)) {
+  if (!emailRegex.test(fullEmail)) {
     ElMessage.warning('请输入有效的邮箱地址')
     return
   }
 
   try {
-    // 发送验证码
-    const response = await sendVerificationCodeApi(registerForm.email)
+    await checkRegisterLegality(registerForm.username, fullEmail)
+
+    const response = await sendVerificationCodeApi(fullEmail)
     if (response.success) {
       ElMessage.success('验证码发送成功')
       
@@ -140,11 +192,11 @@ const handleRegister = async () => {
   await registerFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // 发起注册请求
+        const fullEmail = registerForm.emailLocal + '.com'
         const response = await register(
           registerForm.username,
           registerForm.password,
-          registerForm.email,
+          fullEmail,
           registerForm.verification_code
         )
         
@@ -209,6 +261,25 @@ h3 {
 .code-input-wrapper {
   display: flex;
   align-items: center;
+}
+
+.email-input-wrapper {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.email-suffix {
+  margin-left: 10px;
+  padding: 0 12px;
+  height: 32px;
+  line-height: 32px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background-color: var(--card-background);
+  color: var(--text-color);
+  font-size: 14px;
+  box-sizing: border-box;
 }
 
 .register-btn {
