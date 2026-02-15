@@ -37,6 +37,17 @@
             <span class="menu-label">我的知识库</span>
           </el-menu-item>
         </el-sub-menu>
+        <el-sub-menu v-if="isAdmin" index="/review-group">
+          <template #title>
+            <el-icon>
+              <Check />
+            </el-icon>
+            <span class="menu-label">审核列表</span>
+          </template>
+          <el-menu-item index="/knowledge-review">
+            <span class="menu-label">知识库审核</span>
+          </el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </aside>
 
@@ -203,7 +214,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { UserFilled, User, Collection, Fold, Expand, Bell, RefreshRight } from '@element-plus/icons-vue'
+import { UserFilled, User, Collection, Fold, Expand, Bell, RefreshRight, Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getCurrentUser } from '@/api/user'
 import { handleApiError } from '@/utils/api'
@@ -213,6 +224,7 @@ import websocket from '@/utils/websocket'
 const router = useRouter()
 const route = useRoute()
 const userAvatar = ref('')
+const userRole = ref('user')
 const isOnline = ref(false)
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 const isCollapsed = ref(false)
@@ -221,6 +233,10 @@ const messageLoading = ref(false)
 const messagePopoverVisible = ref(false)
 const messageDialogVisible = ref(false)
 const selectedMessage = ref(null)
+
+const isAdmin = computed(() => {
+  return userRole.value === 'admin'
+})
 
 const unreadCount = computed(() => {
   return messages.value.filter((item) => !item.is_read).length
@@ -255,7 +271,9 @@ const resolveAvatarUrl = (avatarUrl) => {
 
 const pageTitleMap = {
   '/persona-card': '人设卡',
-  '/knowledge-base': '知识库',
+  '/knowledge-base': '知识库广场',
+  '/my-knowledge': '我的知识库',
+  '/knowledge-review': '审核列表',
   '/user-center': '个人中心'
 }
 
@@ -327,10 +345,16 @@ const handleMarkAllRead = async () => {
 const getUserInfo = async () => {
   try {
     const response = await getCurrentUser()
-    if (response.success) {
-      userAvatar.value = resolveAvatarUrl(response.data && response.data.avatar_url ? response.data.avatar_url : '')
+    if (response && response.success) {
+      const data = response.data || {}
+      userAvatar.value = resolveAvatarUrl(data.avatar_url || '')
+      userRole.value = data.role || 'user'
+    } else if (response && response.data) {
+      const data = response.data
+      userAvatar.value = resolveAvatarUrl(data.avatar_url || '')
+      userRole.value = data.role || 'user'
     } else {
-      console.error('获取用户信息失败:', response.message)
+      console.error('获取用户信息失败:', response && response.message)
     }
   } catch (error) {
     console.error('获取用户信息错误:', error)

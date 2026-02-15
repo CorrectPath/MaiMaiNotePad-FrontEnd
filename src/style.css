@@ -30,6 +30,10 @@
   --el-border-color-lighter: var(--border-color);
   --el-bg-color: var(--card-background);
   --el-bg-color-overlay: var(--primary-elevated-color);
+  --el-bg-color-page: var(--primary-color);
+  --el-fill-color-blank: var(--card-background);
+  --el-fill-color-light: var(--card-background);
+  --el-fill-color-lighter: var(--card-background);
 
   --el-menu-bg-color: var(--primary-elevated-color);
   --el-menu-text-color: var(--text-color);
@@ -102,6 +106,72 @@ body {
   background-color: var(--card-background);
 }
 
+.el-select .el-input__wrapper {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+.el-select .el-input__inner {
+  color: var(--text-color);
+}
+
+.el-textarea__inner {
+  color: var(--text-color);
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+.el-input__count {
+  background-color: transparent;
+  color: var(--muted-text-color);
+}
+
+.el-input__count-inner {
+  background-color: transparent;
+  color: var(--muted-text-color);
+}
+
+.el-upload,
+.el-upload-dragger {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.el-upload-list__item {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.el-button--default {
+  background-color: transparent;
+  border-color: rgba(246, 196, 83, 0.35);
+  color: var(--secondary-color);
+}
+
+.el-button--default:hover,
+.el-button--default:focus {
+  background-color: rgba(246, 196, 83, 0.12);
+  border-color: var(--secondary-soft-color);
+  color: var(--secondary-color);
+}
+
+.el-button.is-text,
+.el-button.is-link {
+  background-color: transparent;
+  border-color: transparent;
+  color: var(--muted-text-color);
+}
+
+.el-button.is-text:hover,
+.el-button.is-text:focus,
+.el-button.is-link:hover,
+.el-button.is-link:focus {
+  background-color: var(--hover-color);
+  color: var(--secondary-color);
+}
+
 .el-card {
   background-color: var(--card-background);
   border-color: var(--border-color);
@@ -152,8 +222,8 @@ body {
 
 .el-pagination__button,
 .el-pager li {
-  background-color: var(--card-background);
-  color: var(--text-color);
+  background-color: var(--card-background) !important;
+  color: var(--text-color) !important;
   border-color: var(--border-color);
 }
 
@@ -161,4 +231,96 @@ body {
 .el-pager li.is-active {
   background-color: var(--secondary-color);
   color: var(--primary-color);
+}
+
+.el-pagination.is-background .el-pagination__button,
+.el-pagination.is-background .el-pager li,
+.el-pagination.is-background .btn-prev,
+.el-pagination.is-background .btn-next {
+  background-color: var(--card-background) !important;
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.el-pagination.is-background .el-pager li.is-active {
+  background-color: var(--secondary-color);
+  color: var(--primary-color);
+}
+
+/* 下拉选择和浮层为深色主题 */
+.el-popper.is-light,
+.el-select-dropdown,
+.el-dropdown-menu {
+  background-color: var(--card-background) !important;
+  border-color: var(--border-color);
+  color: var(--text-color);
+}
+
+.el-select-dropdown__list {
+  background-color: var(--card-background) !important;
+}
+
+.el-select-dropdown .el-scrollbar__view {
+  background-color: var(--card-background) !important;
+}
+
+.el-select-dropdown__item,
+.el-dropdown-menu__item {
+  color: var(--text-color);
+}
+
+.el-select-dropdown__item.hover,
+.el-select-dropdown__item.selected {
+  background-color: var(--hover-color);
+  color: var(--secondary-color);
+}
+
+.el-table th {
+  background-color: var(--card-background) !important;
+  color: var(--text-color);
+}
+
+.el-table tr {
+  background-color: var(--card-background);
+}
+
+.el-descriptions {
+  background-color: transparent;
+  color: var(--text-color);
+}
+
+.el-descriptions__header {
+  color: var(--muted-text-color);
+}
+
+.el-descriptions__body {
+  background-color: transparent;
+}
+
+.el-descriptions__cell {
+  background-color: var(--card-background) !important;
+  border-color: var(--border-color);
+}
+
+.el-descriptions__label {
+  color: var(--muted-text-color);
+  background-color: var(--card-background) !important;
+}
+
+.el-descriptions__content {
+  color: var(--text-color);
+  background-color: var(--card-background) !important;
+}
+
+.el-tag {
+  background-color: transparent;
+  border-radius: 999px;
+  border-color: rgba(246, 196, 83, 0.4);
+  color: var(--secondary-color);
+}
+
+.el-tag--plain {
+  background-color: transparent;
+  border-color: rgba(246, 196, 83, 0.4);
+  color: var(--secondary-color);
 }

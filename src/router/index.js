@@ -8,6 +8,7 @@ import MyKnowledge from '../views/MyKnowledge.vue'
 import UserCenter from '../views/UserCenter.vue'
 import ResetPassword from '../views/ResetPassword.vue'
 import KnowledgeUpload from '../views/KnowledgeUpload.vue'
+import KnowledgeReview from '../views/KnowledgeReview.vue'
 
 const routes = [
   {
@@ -77,6 +78,14 @@ const routes = [
         component: KnowledgeUpload,
         meta: {
           pageTitle: '上传知识库'
+        }
+      },
+      {
+        path: '/knowledge-review',
+        name: 'KnowledgeReview',
+        component: KnowledgeReview,
+        meta: {
+          pageTitle: '审核列表'
         }
       },
       {

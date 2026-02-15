@@ -67,3 +67,18 @@ export const addFilesToKnowledgeBase = (kb_id, files) => {
 export const deleteFileFromKnowledgeBase = (kb_id, file_id) => {
   return apiClient.delete(`/knowledge/${kb_id}/${file_id}`)
 }
+
+// 获取待审核知识库列表
+export const getPendingKnowledgeReview = (params = {}) => {
+  return apiClient.get('/review/knowledge/pending', { params })
+}
+
+// 审核通过知识库
+export const approveKnowledgeBaseReview = (kb_id) => {
+  return apiClient.post(`/review/knowledge/${kb_id}/approve`)
+}
+
+// 审核拒绝知识库
+export const rejectKnowledgeBaseReview = (kb_id, reason) => {
+  return apiClient.post(`/review/knowledge/${kb_id}/reject`, { reason })
+}

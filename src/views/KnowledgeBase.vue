@@ -74,25 +74,46 @@
           >
             <div class="card-header">
               <h3 class="card-name">{{ kb.name }}</h3>
-              <el-button
-                :icon="kb.isStarred ? StarFilled : Star"
-                type="text"
-                class="star-button"
-                @click.stop="toggleStar(kb)"
-                :style="{ color: kb.isStarred ? '#f90' : '#999' }"
-              ></el-button>
+              <div class="card-stats">
+                <span class="stat-item">
+                  <el-icon>
+                    <Download />
+                  </el-icon>
+                  {{ kb.downloads }}
+                </span>
+                <span
+                  class="stat-item stat-star"
+                  @click.stop="toggleStar(kb)"
+                >
+                  <el-icon>
+                    <StarFilled v-if="kb.isStarred" />
+                    <Star v-else />
+                  </el-icon>
+                  {{ kb.star_count }}
+                </span>
+              </div>
             </div>
-            <div class="card-author">{{ kb.author ? `作者: ${kb.author}` : '作者: 用户已注销' }}</div>
-            <div class="card-description">{{ kb.description }}</div>
-            <div class="card-stats">
-              <span class="stat-item">
-                <el-icon><Download /></el-icon>
-                {{ kb.downloads }}
-              </span>
-              <span class="stat-item">
-                <el-icon><Star /></el-icon>
-                {{ kb.star_count }}
-              </span>
+            <div class="card-author">
+              {{ kb.author ? `作者: ${kb.author}` : '作者: 用户已注销' }}
+            </div>
+            <div class="card-description">
+              {{ kb.description }}
+            </div>
+            <div
+              v-if="kb.tags && kb.tags.length"
+              class="card-tags"
+            >
+              <el-tag
+                v-for="(tag, index) in kb.tags"
+                :key="index"
+                size="small"
+                effect="plain"
+              >
+                {{ tag }}
+              </el-tag>
+            </div>
+            <div class="card-date">
+              {{ formatDateOnly(kb.updated_at || kb.created_at) }}
             </div>
           </el-card>
         </div>
@@ -117,7 +138,7 @@
       v-model="dialogVisible"
       :title="selectedKB.name"
       direction="rtl"
-      size="40%"
+      size="75%"
       :with-header="true"
       destroy-on-close
     >
@@ -432,11 +453,21 @@ const downloadAllFiles = async () => {
   }
 }
 
-// 格式化日期
+// 格式化日期时间（含时间）
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleString()
+}
+
+// 仅格式化日期（不含时分秒）
+const formatDateOnly = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  return date.toLocaleDateString()
 }
 
 // 格式化文件大小
@@ -554,15 +585,26 @@ onMounted(() => {
   -webkit-box-orient: vertical;
   color: var(--muted-text-color);
   font-size: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+
+.card-tags {
+  margin-bottom: 6px;
+}
+
+.card-tags :deep(.el-tag) {
+  margin-right: 4px;
+}
+
+.card-date {
+  font-size: 12px;
+  color: var(--muted-text-color);
 }
 
 .card-stats {
   display: flex;
   gap: 15px;
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
+  align-items: center;
 }
 
 .stat-item {
@@ -571,6 +613,18 @@ onMounted(() => {
   gap: 5px;
   color: var(--muted-text-color);
   font-size: 14px;
+}
+
+.stat-star {
+  cursor: pointer;
+}
+
+.stat-star :deep(.el-icon) {
+  color: var(--muted-text-color);
+}
+
+.stat-star-active :deep(.el-icon) {
+  color: #f90;
 }
 
 .pagination-section {
@@ -598,18 +652,6 @@ onMounted(() => {
 :deep(.el-drawer__headerbtn) {
   top: 20px;
   right: 20px;
-}
-
-/* 增大收藏按钮尺寸 */
-.star-button {
-  font-size: 24px !important;
-  padding: 4px !important;
-  color: var(--muted-text-color) !important;
-  transform: scale(1.2); /* 放大按钮 */
-}
-
-.star-button:hover {
-  color: var(--secondary-color) !important;
 }
 
 .dialog-content {

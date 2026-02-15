@@ -117,7 +117,7 @@
       v-model="dialogVisible"
       :title="selectedCard.name"
       direction="rtl"
-      size="40%"
+      size="75%"
       :with-header="true"
       destroy-on-close
     >

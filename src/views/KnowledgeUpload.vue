@@ -53,10 +53,26 @@
             </el-radio-group>
           </el-form-item>
           <el-form-item label="标签">
-            <el-input
-              v-model="form.tags"
-              placeholder="请输入标签，使用逗号分隔"
-            />
+            <div class="tags-editor">
+              <el-tag
+                v-for="tag in form.tags"
+                :key="tag"
+                closable
+                size="small"
+                @close="removeUploadTag(tag)"
+              >
+                {{ tag }}
+              </el-tag>
+              <el-input
+                v-model="uploadTagInput"
+                class="tag-input"
+                size="small"
+                placeholder="输入标签，按逗号分隔"
+                @keydown.enter.stop.prevent
+                @keyup="handleUploadTagInputKeyup"
+                @blur="commitUploadTagInput"
+              />
+            </div>
           </el-form-item>
           <el-form-item label="补充说明">
             <el-input
@@ -67,6 +83,9 @@
               maxlength="1000"
               show-word-limit
             />
+            <div class="form-tip">
+              补充说明仅自己可见，不会在知识库广场等公共页面展示
+            </div>
           </el-form-item>
           <el-form-item label="知识库文件" required>
             <el-upload
@@ -127,7 +146,7 @@ const form = reactive({
   description: '',
   copyright_owner: '',
   visibility: 'private',
-  tags: '',
+  tags: [],
   content: ''
 })
 
@@ -142,6 +161,7 @@ const rules = {
 
 const fileList = ref([])
 const submitting = ref(false)
+const uploadTagInput = ref('')
 
 const handleFileChange = (file, files) => {
   fileList.value = files
@@ -171,9 +191,51 @@ const buildFormData = () => {
     formData.append('content', form.content)
   }
   if (form.tags) {
-    formData.append('tags', form.tags)
+    const tagsValue = Array.isArray(form.tags) ? form.tags.join(',') : ''
+    if (tagsValue) {
+      formData.append('tags', tagsValue)
+    }
   }
   return formData
+}
+
+const addTagsFromInput = (source, inputValue) => {
+  if (!inputValue) {
+    return
+  }
+  const normalized = inputValue.replace(/，/g, ',')
+  const parts = normalized.split(',').map((item) => item.trim()).filter((item) => item)
+  if (!parts.length) {
+    return
+  }
+  parts.forEach((tag) => {
+    if (!source.includes(tag)) {
+      source.push(tag)
+    }
+  })
+}
+
+const handleUploadTagInputKeyup = (event) => {
+  if (event.key === ',' || event.key === '，') {
+    event.preventDefault()
+    addTagsFromInput(form.tags, uploadTagInput.value)
+    uploadTagInput.value = ''
+  }
+}
+
+const commitUploadTagInput = () => {
+  if (!uploadTagInput.value) {
+    return
+  }
+  addTagsFromInput(form.tags, uploadTagInput.value)
+  uploadTagInput.value = ''
+}
+
+const removeUploadTag = (tag) => {
+  const index = form.tags.indexOf(tag)
+  if (index !== -1) {
+    form.tags.splice(index, 1)
+  }
 }
 
 const handleSubmit = () => {
@@ -195,6 +257,7 @@ const handleSubmit = () => {
       if (response.success) {
         ElMessage.success(response.message || '知识库上传成功')
         resetForm()
+        router.push('/my-knowledge')
       } else {
         ElMessage.error(response.message || '知识库上传失败')
       }
@@ -211,8 +274,9 @@ const resetForm = () => {
   form.name = ''
   form.description = ''
   form.copyright_owner = ''
-  form.tags = ''
+  form.tags = []
   form.content = ''
+  uploadTagInput.value = ''
   fileList.value = []
   if (formRef.value) {
     formRef.value.clearValidate()
@@ -262,6 +326,16 @@ const goBackToList = () => {
   font-size: 13px;
 }
 
+.tags-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag-input {
+  width: 260px;
+}
+
 .card-actions {
   display: flex;
   align-items: center;
@@ -279,5 +353,11 @@ const goBackToList = () => {
 .upload-icon {
   font-size: 40px;
   color: var(--secondary-color);
+}
+
+.form-tip {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted-text-color);
 }
 </style>
