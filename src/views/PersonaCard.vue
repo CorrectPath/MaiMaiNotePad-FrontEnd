@@ -32,7 +32,7 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="排序字段">
-                  <el-select v-model="searchForm.sort_by" placeholder="请选择排序字段">
+                  <el-select v-model="searchForm.sort_by" placeholder="请选择排序字段" class="sort-select">
                     <el-option label="创建时间" value="created_at"></el-option>
                     <el-option label="更新时间" value="updated_at"></el-option>
                     <el-option label="名称" value="name"></el-option>
@@ -43,7 +43,7 @@
               </el-col>
               <el-col :span="8">
                 <el-form-item label="排序顺序">
-                  <el-select v-model="searchForm.sort_order" placeholder="请选择排序顺序">
+                  <el-select v-model="searchForm.sort_order" placeholder="请选择排序顺序" class="sort-select">
                     <el-option label="升序" value="asc"></el-option>
                     <el-option label="降序" value="desc"></el-option>
                   </el-select>
@@ -51,8 +51,10 @@
               </el-col>
               <el-col :span="8" class="search-buttons">
                 <el-form-item>
-                <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
-                <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+                  <el-button-group>
+                    <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
+                    <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+                  </el-button-group>
                 </el-form-item>
               </el-col>
             </el-row>
@@ -492,6 +494,10 @@ onMounted(() => {
 .search-btn {
   background-color: var(--secondary-color);
   border-color: var(--secondary-color);
+}
+
+.sort-select {
+  width: 100%;
 }
 
 .persona-card-list-container {
