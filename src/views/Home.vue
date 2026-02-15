@@ -70,11 +70,21 @@
             <div class="message-list-container">
               <div class="message-list-header">
                 <span class="message-list-title">消息通知</span>
-                <el-button class="message-refresh-btn" text circle @click.stop="refreshMessages">
-                  <el-icon>
-                    <RefreshRight />
-                  </el-icon>
-                </el-button>
+                <div class="message-list-actions">
+                  <el-button
+                    v-if="unreadCount > 1"
+                    class="message-mark-all-btn"
+                    text
+                    @click.stop="handleMarkAllRead"
+                  >
+                    一键已读
+                  </el-button>
+                  <el-button class="message-refresh-btn" text circle @click.stop="refreshMessages">
+                    <el-icon>
+                      <RefreshRight />
+                    </el-icon>
+                  </el-button>
+                </div>
               </div>
               <div class="message-list-body">
                 <div v-if="messageLoading" class="message-loading">
@@ -105,21 +115,70 @@
             </div>
           </el-popover>
 
+          <el-dialog
+            v-model="messageDialogVisible"
+            :title="selectedMessage ? selectedMessage.title : ''"
+            width="480px"
+            destroy-on-close
+          >
+            <div class="message-dialog-content" v-if="selectedMessage">
+              <div class="message-dialog-meta">
+                <span>时间：{{ formatMessageTime(selectedMessage.created_at) }}</span>
+              </div>
+              <div class="message-dialog-body">
+                {{ selectedMessage.content }}
+              </div>
+            </div>
+            <template #footer>
+              <div class="message-dialog-footer">
+                <div class="message-dialog-footer-left">
+                  <el-button
+                    v-if="hasPrevMessage"
+                    class="message-nav-btn"
+                    plain
+                    size="small"
+                    @click="handleShowPrevMessage"
+                  >
+                    上一条
+                  </el-button>
+                </div>
+                <div class="message-dialog-footer-right">
+                  <el-button
+                    v-if="hasNextMessage"
+                    class="message-nav-btn"
+                    plain
+                    size="small"
+                    @click="handleShowNextMessage"
+                  >
+                    下一条
+                  </el-button>
+                </div>
+              </div>
+            </template>
+          </el-dialog>
+
           <el-dropdown @command="handleUserCommand">
             <span class="user-dropdown-trigger">
-              <el-avatar
-                :size="36"
-                :src="userAvatar"
-                class="user-avatar"
-              >
-                <template #default>
-                  <UserFilled />
-                </template>
-              </el-avatar>
+              <div class="user-avatar-wrapper">
+                <el-avatar
+                  :size="32"
+                  :src="userAvatar"
+                  class="user-avatar"
+                >
+                  <template #default>
+                    <UserFilled />
+                  </template>
+                </el-avatar>
+                <span
+                  class="user-status-dot"
+                  :class="isOnline ? 'user-status-online' : 'user-status-offline'"
+                ></span>
+              </div>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="user-center">个人中心</el-dropdown-item>
+                <el-dropdown-item divided command="logout">登出</el-dropdown-item>
               </el-dropdown-menu>
             </template>
           </el-dropdown>
@@ -134,25 +193,44 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { UserFilled, User, Collection, Fold, Expand, Bell, RefreshRight } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getCurrentUser } from '@/api/user'
 import { handleApiError } from '@/utils/api'
 import { getMessages, markMessageRead } from '@/api/messages'
+import websocket from '@/utils/websocket'
 
 const router = useRouter()
 const route = useRoute()
 const userAvatar = ref('')
+const isOnline = ref(false)
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 const isCollapsed = ref(false)
 const messages = ref([])
 const messageLoading = ref(false)
 const messagePopoverVisible = ref(false)
+const messageDialogVisible = ref(false)
+const selectedMessage = ref(null)
 
 const unreadCount = computed(() => {
   return messages.value.filter((item) => !item.is_read).length
+})
+
+const currentMessageIndex = computed(() => {
+  if (!selectedMessage.value) {
+    return -1
+  }
+  return messages.value.findIndex((item) => item.id === selectedMessage.value.id)
+})
+
+const hasPrevMessage = computed(() => {
+  return currentMessageIndex.value > 0
+})
+
+const hasNextMessage = computed(() => {
+  return currentMessageIndex.value >= 0 && currentMessageIndex.value < messages.value.length - 1
 })
 
 const resolveAvatarUrl = (avatarUrl) => {
@@ -214,6 +292,30 @@ const refreshMessages = () => {
   fetchMessages()
 }
 
+const handleWebsocketMessage = () => {
+  fetchMessages()
+}
+
+const handleMarkAllRead = async () => {
+  const unreadMessages = messages.value.filter((item) => !item.is_read)
+  if (!unreadMessages.length) {
+    return
+  }
+  try {
+    const tasks = unreadMessages.map((msg) =>
+      markMessageRead(msg.id).then((response) => {
+        if (response && response.success) {
+          msg.is_read = true
+        }
+      })
+    )
+    await Promise.all(tasks)
+  } catch (error) {
+    const errorMessage = handleApiError(error, '一键标记已读失败，请检查网络连接')
+    ElMessage.error(errorMessage)
+  }
+}
+
 const getUserInfo = async () => {
   try {
     const response = await getCurrentUser()
@@ -230,9 +332,17 @@ const getUserInfo = async () => {
 }
 
 const handleMessageClick = async (msg) => {
-  if (!msg || msg.is_read) {
+  if (!msg) {
     return
   }
+  messagePopoverVisible.value = false
+  selectedMessage.value = msg
+  messageDialogVisible.value = true
+
+  if (msg.is_read) {
+    return
+  }
+
   try {
     const response = await markMessageRead(msg.id)
     if (response && response.success) {
@@ -246,6 +356,51 @@ const handleMessageClick = async (msg) => {
   }
 }
 
+const showMessageAtIndex = async (index) => {
+  if (index < 0 || index >= messages.value.length) {
+    return
+  }
+  const msg = messages.value[index]
+  if (!msg) {
+    return
+  }
+  messagePopoverVisible.value = false
+  selectedMessage.value = msg
+  messageDialogVisible.value = true
+
+  if (msg.is_read) {
+    return
+  }
+
+  try {
+    const response = await markMessageRead(msg.id)
+    if (response && response.success) {
+      msg.is_read = true
+    } else if (response && response.message) {
+      ElMessage.error(response.message)
+    }
+  } catch (error) {
+    const errorMessage = handleApiError(error, '标记消息已读失败，请检查网络连接')
+    ElMessage.error(errorMessage)
+  }
+}
+
+const handleShowPrevMessage = () => {
+  if (!hasPrevMessage.value) {
+    return
+  }
+  const targetIndex = currentMessageIndex.value - 1
+  showMessageAtIndex(targetIndex)
+}
+
+const handleShowNextMessage = () => {
+  if (!hasNextMessage.value) {
+    return
+  }
+  const targetIndex = currentMessageIndex.value + 1
+  showMessageAtIndex(targetIndex)
+}
+
 const toggleCollapse = () => {
   isCollapsed.value = !isCollapsed.value
 }
@@ -253,11 +408,29 @@ const toggleCollapse = () => {
 const handleUserCommand = (command) => {
   if (command === 'user-center') {
     router.push('/user-center')
+  } else if (command === 'logout') {
+    localStorage.removeItem('access_token')
+    localStorage.removeItem('refresh_token')
+    localStorage.removeItem('rememberedLogin')
+    window.location.href = '/login'
   }
 }
 
 onMounted(() => {
   getUserInfo()
+  websocket.subscribeStatus((status) => {
+    if (status === 'open' || status === 'message') {
+      isOnline.value = true
+    } else if (status === 'closed' || status === 'error') {
+      isOnline.value = false
+    }
+  })
+  websocket.init(handleWebsocketMessage)
+})
+
+onUnmounted(() => {
+  websocket.unsubscribeStatus()
+  websocket.close()
 })
 
 watch(
@@ -358,15 +531,39 @@ watch(
   gap: 12px;
 }
 
+.user-avatar-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
 .user-avatar {
   cursor: pointer;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
 }
 
 .user-dropdown-trigger {
   display: inline-flex;
   align-items: center;
+}
+
+.user-status-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  border: 2px solid var(--card-background);
+  box-sizing: border-box;
+}
+
+.user-status-online {
+  background-color: #52c41a;
+}
+
+.user-status-offline {
+  background-color: #bfbfbf;
 }
 
 .message-badge {
@@ -402,6 +599,17 @@ watch(
 
 .message-list-title {
   font-size: 14px;
+}
+
+.message-list-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.message-mark-all-btn {
+  font-size: 12px;
+  padding: 0 6px;
 }
 
 .message-refresh-btn {
@@ -490,6 +698,40 @@ watch(
   text-align: center;
   font-size: 12px;
   color: var(--muted-text-color);
+}
+
+.message-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.message-dialog-meta {
+  font-size: 12px;
+  color: var(--muted-text-color);
+}
+
+.message-dialog-body {
+  font-size: 14px;
+  line-height: 1.6;
+  height: 260px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.message-dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 4px;
+}
+
+.message-nav-btn {
+  min-width: 80px;
+  padding: 4px 12px;
+  font-size: 12px;
+  border-radius: 9999px;
+  background-color: transparent;
 }
 
 .side-menu {

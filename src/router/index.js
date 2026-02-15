@@ -15,38 +15,59 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: Login
+    component: Login,
+    meta: {
+      pageTitle: '登录'
+    }
   },
   {
     path: '/register',
     name: 'Register',
-    component: Register
+    component: Register,
+    meta: {
+      pageTitle: '注册'
+    }
   },
   {
     path: '/reset-password',
     name: 'ResetPassword',
-    component: ResetPassword
+    component: ResetPassword,
+    meta: {
+      pageTitle: '重置密码'
+    }
   },
   {
     path: '/home',
     name: 'Home',
     component: Home,
+    meta: {
+      pageTitle: '麦麦笔记本'
+    },
     redirect: '/persona-card',
     children: [
       {
         path: '/persona-card',
         name: 'PersonaCard',
-        component: PersonaCard
+        component: PersonaCard,
+        meta: {
+          pageTitle: '人设卡'
+        }
       },
       {
         path: '/knowledge-base',
         name: 'KnowledgeBase',
-        component: KnowledgeBase
+        component: KnowledgeBase,
+        meta: {
+          pageTitle: '知识库'
+        }
       },
       {
         path: '/user-center',
         name: 'UserCenter',
-        component: UserCenter
+        component: UserCenter,
+        meta: {
+          pageTitle: '个人中心'
+        }
       }
     ]
   }
@@ -55,6 +76,17 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+const baseTitle = '麦麦笔记本'
+
+router.afterEach((to) => {
+  const pageTitle = to.meta && to.meta.pageTitle ? to.meta.pageTitle : ''
+  if (pageTitle) {
+    document.title = `${baseTitle} - ${pageTitle}`
+  } else {
+    document.title = baseTitle
+  }
 })
 
 export default router
