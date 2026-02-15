@@ -713,6 +713,7 @@ watch(
   color: var(--muted-text-color);
   margin-bottom: 4px;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
