@@ -29,10 +29,10 @@
       <!-- 左侧路由栏 -->
       <aside class="side-menu">
         <el-menu
-          default-active="/persona-card"
           class="menu-wrapper"
           router
           :unique-opened="true"
+          :default-active="$route.path"
         >
           <el-menu-item index="/persona-card">
             <template #title>
@@ -142,7 +142,7 @@ onMounted(() => {
 
 .slogan {
   font-size: 12px;
-  color: #999;
+  color: var(--muted-text-color);
   margin: 0;
 }
 

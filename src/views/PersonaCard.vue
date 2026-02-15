@@ -531,7 +531,7 @@ onMounted(() => {
 }
 
 .card-author {
-  color: #999;
+  color: var(--muted-text-color);
   font-size: 14px;
   margin-bottom: 10px;
 }
@@ -543,7 +543,7 @@ onMounted(() => {
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  color: #ccc;
+  color: var(--muted-text-color);
   font-size: 14px;
   margin-bottom: 10px;
 }
@@ -560,7 +560,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #999;
+  color: var(--muted-text-color);
   font-size: 14px;
 }
 
@@ -595,12 +595,12 @@ onMounted(() => {
 .star-button {
   font-size: 24px !important;
   padding: 4px !important;
-  color: #999 !important;
+  color: var(--muted-text-color) !important;
   transform: scale(1.2); /* 放大按钮 */
 }
 
 .star-button:hover {
-  color: #f90 !important;
+  color: var(--secondary-color) !important;
 }
 
 .dialog-content {

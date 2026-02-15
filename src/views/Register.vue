@@ -274,7 +274,7 @@ h3 {
   padding: 0 12px;
   height: 32px;
   line-height: 32px;
-  border: 1px solid #dcdfe6;
+  border: 1px solid var(--border-color);
   border-radius: 4px;
   background-color: var(--card-background);
   color: var(--text-color);

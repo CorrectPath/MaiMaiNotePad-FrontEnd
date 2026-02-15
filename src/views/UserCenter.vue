@@ -1,54 +1,135 @@
 <template>
   <div class="user-center-container">
-    <el-card class="user-card">
-      <h2>个人中心</h2>
-      <el-form
-        :model="passwordForm"
-        :rules="passwordRules"
-        ref="passwordFormRef"
-        label-position="left"
-        label-width="120px"
-        class="password-form"
-      >
-        <el-form-item label="当前密码" prop="current_password">
-          <el-input
-            v-model="passwordForm.current_password"
-            type="password"
-            placeholder="请输入当前密码"
-            show-password
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="新密码" prop="new_password">
-          <el-input
-            v-model="passwordForm.new_password"
-            type="password"
-            placeholder="请输入新密码"
-            show-password
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="确认新密码" prop="confirm_password">
-          <el-input
-            v-model="passwordForm.confirm_password"
-            type="password"
-            placeholder="请再次输入新密码"
-            show-password
-          ></el-input>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleChangePassword">修改密码</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <div class="layout-container">
+      <el-card class="user-info-card">
+        <div class="card-header">
+          <div class="card-title-group">
+            <h2 class="page-title">个人中心</h2>
+            <p class="page-subtitle">管理账号信息与安全设置</p>
+          </div>
+        </div>
+        <el-tabs v-model="activeTab" class="user-center-tabs">
+          <el-tab-pane label="基本信息" name="profile">
+            <div class="user-info-content">
+              <div class="avatar-section">
+                <el-avatar :size="80" :src="avatarUrl" class="user-avatar">
+                  <template #default>
+                    <span class="avatar-placeholder">
+                      {{ userInfo && userInfo.username ? userInfo.username.charAt(0).toUpperCase() : 'U' }}
+                    </span>
+                  </template>
+                </el-avatar>
+                <div class="avatar-actions">
+                  <el-button
+                    size="small"
+                    type="primary"
+                    @click="triggerAvatarSelect"
+                    :loading="isAvatarUploading"
+                  >
+                    更换头像
+                  </el-button>
+                  <el-button
+                    size="small"
+                    type="danger"
+                    plain
+                    @click="handleDeleteAvatar"
+                    :disabled="!avatarUrl || isAvatarDeleting"
+                    :loading="isAvatarDeleting"
+                  >
+                    删除头像
+                  </el-button>
+                  <input
+                    ref="fileInputRef"
+                    type="file"
+                    accept="image/*"
+                    class="hidden-file-input"
+                    @change="handleAvatarChange"
+                  />
+                </div>
+              </div>
+              <div class="basic-info-section">
+                <div class="info-row">
+                  <span class="info-label">用户名</span>
+                  <span class="info-value">
+                    {{ userInfo && userInfo.username ? userInfo.username : '未登录用户' }}
+                  </span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">邮箱</span>
+                  <span class="info-value">
+                    {{ userInfo && userInfo.email ? userInfo.email : '-' }}
+                  </span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">用户ID</span>
+                  <span class="info-value">
+                    {{ userInfo && userInfo.id ? userInfo.id : '-' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </el-tab-pane>
+          <el-tab-pane label="修改密码" name="password">
+            <div class="security-card-inner">
+              <h3 class="section-title">账号安全</h3>
+              <el-form
+                :model="passwordForm"
+                :rules="passwordRules"
+                ref="passwordFormRef"
+                label-position="left"
+                label-width="120px"
+                class="password-form"
+              >
+                <el-form-item label="当前密码" prop="current_password">
+                  <el-input
+                    v-model="passwordForm.current_password"
+                    type="password"
+                    placeholder="请输入当前密码"
+                    show-password
+                  ></el-input>
+                </el-form-item>
+                <el-form-item label="新密码" prop="new_password">
+                  <el-input
+                    v-model="passwordForm.new_password"
+                    type="password"
+                    placeholder="请输入新密码"
+                    show-password
+                  ></el-input>
+                </el-form-item>
+                <el-form-item label="确认新密码" prop="confirm_password">
+                  <el-input
+                    v-model="passwordForm.confirm_password"
+                    type="password"
+                    placeholder="请再次输入新密码"
+                    show-password
+                  ></el-input>
+                </el-form-item>
+                <el-form-item>
+                  <el-button type="primary" @click="handleChangePassword">
+                    修改密码
+                  </el-button>
+                </el-form-item>
+              </el-form>
+            </div>
+          </el-tab-pane>
+        </el-tabs>
+      </el-card>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { changePassword } from '@/api/user'
+import { changePassword, getCurrentUser, uploadAvatar, deleteAvatar } from '@/api/user'
 import { handleApiError } from '@/utils/api'
 
 const passwordFormRef = ref()
+const activeTab = ref('profile')
+const userInfo = ref(null)
+const isAvatarUploading = ref(false)
+const isAvatarDeleting = ref(false)
+const fileInputRef = ref(null)
 
 const passwordForm = reactive({
   current_password: '',
@@ -79,6 +160,97 @@ const passwordRules = {
       trigger: ['blur', 'change']
     }
   ]
+}
+
+const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
+
+const avatarUrl = computed(() => {
+  if (!userInfo.value || !userInfo.value.avatar_url) {
+    return ''
+  }
+  const url = userInfo.value.avatar_url
+  if (typeof url !== 'string' || url.length === 0) {
+    return ''
+  }
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url
+  }
+  const base = apiBase || ''
+  const root = base.endsWith('/api') ? base.slice(0, -4) : base
+  return `${root}${url}`
+})
+
+const fetchUserInfo = async () => {
+  try {
+    const response = await getCurrentUser()
+    if (response.success) {
+      userInfo.value = response.data || {}
+    } else {
+      ElMessage.error(response.message || '获取用户信息失败')
+    }
+  } catch (error) {
+    const errorMessage = handleApiError(error, '获取用户信息失败，请检查网络连接')
+    ElMessage.error(errorMessage)
+  }
+}
+
+const triggerAvatarSelect = () => {
+  if (fileInputRef.value) {
+    fileInputRef.value.click()
+  }
+}
+
+const handleAvatarChange = async (event) => {
+  const files = event.target.files
+  if (!files || !files.length) {
+    return
+  }
+  const file = files[0]
+  isAvatarUploading.value = true
+  try {
+    const response = await uploadAvatar(file)
+    if (response.success) {
+      ElMessage.success(response.message || '头像上传成功')
+      await fetchUserInfo()
+    } else {
+      ElMessage.error(response.message || '头像上传失败')
+    }
+  } catch (error) {
+    const errorMessage = handleApiError(error, '头像上传失败，请检查网络连接')
+    ElMessage.error(errorMessage)
+  } finally {
+    isAvatarUploading.value = false
+    event.target.value = ''
+  }
+}
+
+const handleDeleteAvatar = () => {
+  if (!avatarUrl.value) {
+    return
+  }
+  ElMessageBox.confirm('确定要删除当前头像吗？', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  })
+    .then(async () => {
+      isAvatarDeleting.value = true
+      try {
+        const response = await deleteAvatar()
+        if (response.success) {
+          ElMessage.success(response.message || '头像已删除')
+          await fetchUserInfo()
+        } else {
+          ElMessage.error(response.message || '删除头像失败')
+        }
+      } catch (error) {
+        const errorMessage = handleApiError(error, '删除头像失败，请检查网络连接')
+        ElMessage.error(errorMessage)
+      } finally {
+        isAvatarDeleting.value = false
+      }
+    })
+    .catch(() => {})
 }
 
 const handleChangePassword = async () => {
@@ -113,21 +285,143 @@ const handleChangePassword = async () => {
     }
   })
 }
+
+onMounted(() => {
+  fetchUserInfo()
+})
 </script>
 
 <style scoped>
 .user-center-container {
+  width: 100%;
+  height: 100%;
   padding: 20px;
+  box-sizing: border-box;
   color: var(--text-color);
   display: flex;
   justify-content: center;
 }
 
-.user-card {
-  width: 500px;
+.layout-container {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.user-info-card {
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+}
+
+.user-center-tabs {
+  margin-top: 8px;
+}
+
+.security-card-inner {
+  padding-top: 8px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 20px;
+}
+
+.card-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.page-title {
+  margin: 0;
+  font-size: 20px;
+}
+
+.page-subtitle {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted-text-color);
+}
+.user-info-content {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-avatar {
+  border: 2px solid var(--secondary-color);
+}
+
+.avatar-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 32px;
+  background-color: var(--hover-color);
+  color: var(--secondary-color);
+}
+
+.avatar-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.hidden-file-input {
+  display: none;
+}
+
+.basic-info-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.info-label {
+  font-size: 14px;
+  color: var(--muted-text-color);
+}
+.info-value {
+  font-size: 14px;
+  color: var(--text-color);
+}
+
+.section-title {
+  margin: 0 0 16px;
+  font-size: 16px;
 }
 
 .password-form {
-  margin-top: 20px;
+  max-width: 500px;
+}
+
+@media (max-width: 768px) {
+  .user-info-content {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .avatar-section {
+    align-items: flex-start;
+  }
 }
 </style>

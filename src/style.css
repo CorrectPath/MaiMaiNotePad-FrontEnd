@@ -3,13 +3,38 @@
   line-height: 1.5;
   font-weight: 400;
 
-  /* 主题颜色 */
-  --primary-color: #000000; /* 黑色主色调 */
-  --secondary-color: #d4af37; /* 深黄色辅色调 */
-  --text-color: #ffffff;
-  --border-color: #333333;
-  --card-background: #1a1a1a;
-  --hover-color: #2a2a2a;
+  --primary-color: #050608;
+  --primary-elevated-color: #0b0e12;
+  --secondary-color: #f6c453;
+  --secondary-soft-color: #f1b53a;
+  --text-color: #f9f6ec;
+  --muted-text-color: #a89c80;
+  --border-color: #3a3323;
+  --card-background: #14110b;
+  --hover-color: #1f1a10;
+  --danger-color: #ff6666;
+
+  /* Element Plus 主题变量 */
+  --el-color-primary: var(--secondary-color);
+  --el-color-primary-light-3: #f8cf70;
+  --el-color-primary-light-5: #f9d889;
+  --el-color-primary-light-7: #fbe1a2;
+  --el-color-primary-light-8: #fbe7b3;
+  --el-color-primary-light-9: #fdf2d3;
+  --el-color-primary-dark-2: #c3953f;
+
+  --el-text-color-primary: var(--text-color);
+  --el-text-color-regular: var(--muted-text-color);
+  --el-border-color: var(--border-color);
+  --el-border-color-light: var(--border-color);
+  --el-border-color-lighter: var(--border-color);
+  --el-bg-color: var(--card-background);
+  --el-bg-color-overlay: var(--primary-elevated-color);
+
+  --el-menu-bg-color: var(--primary-elevated-color);
+  --el-menu-text-color: var(--text-color);
+  --el-menu-active-color: var(--secondary-color);
+  --el-menu-hover-bg-color: var(--hover-color);
 
   color: var(--text-color);
   background-color: var(--primary-color);
@@ -26,13 +51,15 @@ a {
 }
 
 a:hover {
-  color: #e6c25a;
+  color: var(--secondary-soft-color);
 }
 
 body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--primary-color);
+  color: var(--text-color);
 }
 
 #app {
@@ -42,16 +69,27 @@ body {
   padding: 0;
 }
 
-/* Element Plus 样式覆盖 */
 .el-button--primary {
   background-color: var(--secondary-color);
   border-color: var(--secondary-color);
+  color: var(--primary-color);
 }
 
 .el-button--primary:hover,
 .el-button--primary:focus {
-  background-color: #e6c25a;
-  border-color: #e6c25a;
+  background-color: var(--secondary-soft-color);
+  border-color: var(--secondary-soft-color);
+}
+
+.el-button--danger {
+  background-color: var(--danger-color);
+  border-color: var(--danger-color);
+}
+
+.el-button--danger.is-plain {
+  background-color: transparent;
+  border-color: var(--danger-color);
+  color: var(--danger-color);
 }
 
 .el-input__wrapper {
@@ -71,7 +109,7 @@ body {
 }
 
 .el-menu {
-  background-color: var(--primary-color);
+  background-color: var(--primary-elevated-color);
   border-right-color: var(--border-color);
 }
 
@@ -83,6 +121,11 @@ body {
 .el-menu-item.is-active {
   background-color: var(--hover-color);
   color: var(--secondary-color);
+}
+
+.el-popper.is-pure.is-light .el-menu {
+  background-color: var(--primary-elevated-color);
+  color: var(--text-color);
 }
 
 .el-drawer {
