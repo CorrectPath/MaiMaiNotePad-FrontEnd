@@ -425,9 +425,11 @@ import {
   deleteFileFromKnowledgeBase
 } from '@/api/knowledge'
 import { getCurrentUser } from '@/api/user'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, formatFileSize, formatDate } from '@/utils/api'
 
 const router = useRouter()
+
+const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
 const loading = ref(false)
 const knowledgeList = ref([])
@@ -729,7 +731,7 @@ const downloadDrawerFile = async (file) => {
     return
   }
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${currentKB.value.id}/file/${file.file_id}`
+    const downloadUrl = `${apiBase}/knowledge/${currentKB.value.id}/file/${file.file_id}`
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -762,7 +764,7 @@ const downloadAllFilesInKB = async () => {
     return
   }
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${currentKB.value.id}/download`
+    const downloadUrl = `${apiBase}/knowledge/${currentKB.value.id}/download`
     const loading = ElMessage({
       message: '正在准备下载文件...',
       type: 'info',
@@ -931,7 +933,7 @@ const downloadKBFile = async (file) => {
     return
   }
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${editingKB.value.id}/file/${file.file_id}`
+    const downloadUrl = `${apiBase}/knowledge/${editingKB.value.id}/file/${file.file_id}`
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -959,35 +961,8 @@ const downloadKBFile = async (file) => {
   }
 }
 
-const formatFileSize = (size) => {
-  if (!size || size <= 0) {
-    return '0 B'
-  }
-  const kb = size / 1024
-  if (kb < 1024) {
-    return `${kb.toFixed(1)} KB`
-  }
-  const mb = kb / 1024
-  if (mb < 1024) {
-    return `${mb.toFixed(1)} MB`
-  }
-  const gb = mb / 1024
-  return `${gb.toFixed(1)} GB`
-}
-
 const goToUpload = () => {
   router.push('/knowledge-upload')
-}
-
-const formatDate = (value) => {
-  if (!value) {
-    return ''
-  }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-  return date.toLocaleString()
 }
 
 onMounted(async () => {

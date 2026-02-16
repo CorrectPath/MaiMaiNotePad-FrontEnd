@@ -426,9 +426,11 @@ import {
   deleteFileFromPersonaCard
 } from '@/api/persona'
 import { getCurrentUser } from '@/api/user'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, formatFileSize, formatDate } from '@/utils/api'
 
 const router = useRouter()
+
+const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
 const loading = ref(false)
 const personaList = ref([])
@@ -661,7 +663,7 @@ const downloadFile = async (file) => {
     return
   }
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/persona/${currentPersona.value.id}/file/${file.file_id}`
+    const downloadUrl = `${apiBase}/persona/${currentPersona.value.id}/file/${file.file_id}`
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -694,7 +696,7 @@ const downloadAllFiles = async () => {
     return
   }
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/persona/${currentPersona.value.id}/download`
+    const downloadUrl = `${apiBase}/persona/${currentPersona.value.id}/download`
     const loadingMessage = ElMessage({
       message: '正在准备下载文件...',
       type: 'info',
@@ -728,22 +730,6 @@ const downloadAllFiles = async () => {
     console.error('下载人设卡文件压缩包错误:', error)
     ElMessage.error('下载失败: ' + error.message)
   }
-}
-
-const formatFileSize = (size) => {
-  if (!size || size <= 0) {
-    return '0 B'
-  }
-  const kb = size / 1024
-  if (kb < 1024) {
-    return `${kb.toFixed(1)} KB`
-  }
-  const mb = kb / 1024
-  if (mb < 1024) {
-    return `${mb.toFixed(1)} MB`
-  }
-  const gb = mb / 1024
-  return `${gb.toFixed(1)} GB`
 }
 
 const MAX_PERSONA_FILES = 2
@@ -898,7 +884,7 @@ const downloadEditFile = async (file) => {
     return
   }
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/persona/${editingPersona.value.id}/file/${file.file_id}`
+    const downloadUrl = `${apiBase}/persona/${editingPersona.value.id}/file/${file.file_id}`
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -928,17 +914,6 @@ const downloadEditFile = async (file) => {
 
 const goToUpload = () => {
   router.push('/persona-upload')
-}
-
-const formatDate = (value) => {
-  if (!value) {
-    return ''
-  }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-  return date.toLocaleString()
 }
 
 const saveRemark = async () => {
