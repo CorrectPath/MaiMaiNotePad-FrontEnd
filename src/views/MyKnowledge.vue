@@ -5,7 +5,7 @@
         <div class="card-header">
           <div class="card-title-group">
             <h2 class="page-title">我的知识库</h2>
-            <p class="page-subtitle">管理自己上传的知识库，支持删除和公开设置</p>
+            <p class="page-subtitle">管理自己上传的知识库，支持查看、编辑、公开申请和删除</p>
           </div>
           <div class="card-actions">
             <el-button type="primary" @click="goToUpload">

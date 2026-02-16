@@ -45,9 +45,7 @@
         <div class="card-header">
           <div class="card-title-group">
             <h2 class="page-title">人设卡审核</h2>
-            <p class="page-subtitle">
-              展示待审核的人设卡，仅管理员或审核员可以执行通过或拒绝操作
-            </p>
+            <p class="page-subtitle">查看并处理用户提交的人设卡公开申请</p>
           </div>
         </div>
 
