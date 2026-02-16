@@ -17,29 +17,29 @@
         :unique-opened="true"
         :default-active="$route.path"
       >
-        <el-sub-menu index="/persona-group">
-          <template #title>
-            <el-icon>
-              <User />
-            </el-icon>
-            <span class="menu-label">人设卡</span>
-          </template>
-          <el-menu-item index="/persona-card">
-            <span class="menu-label">人设卡广场</span>
-          </el-menu-item>
-          <el-menu-item index="/my-persona">
-            <span class="menu-label">我的人设卡</span>
-          </el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="/knowledge-group">
+        <el-sub-menu index="/square-group">
           <template #title>
             <el-icon>
               <Collection />
             </el-icon>
-            <span class="menu-label">知识库</span>
+            <span class="menu-label">广场</span>
           </template>
+          <el-menu-item index="/persona-card">
+            <span class="menu-label">人设卡广场</span>
+          </el-menu-item>
           <el-menu-item index="/knowledge-base">
             <span class="menu-label">知识库广场</span>
+          </el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="/my-group">
+          <template #title>
+            <el-icon>
+              <UserFilled />
+            </el-icon>
+            <span class="menu-label">我的</span>
+          </template>
+          <el-menu-item index="/my-persona">
+            <span class="menu-label">我的人设卡</span>
           </el-menu-item>
           <el-menu-item index="/my-knowledge">
             <span class="menu-label">我的知识库</span>
@@ -225,7 +225,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { UserFilled, User, Collection, Fold, Expand, Bell, RefreshRight, Check } from '@element-plus/icons-vue'
+import { UserFilled, Collection, Fold, Expand, Bell, RefreshRight, Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getCurrentUser } from '@/api/user'
 import { handleApiError } from '@/utils/api'

@@ -51,77 +51,14 @@
           </div>
         </div>
 
-        <div v-loading="loading">
-          <div
-            v-for="pc in reviewList"
-            :key="pc.id"
-            class="review-item"
-          >
-            <div class="review-main">
-              <div class="review-title-row">
-                <span class="review-name">{{ pc.name }}</span>
-                <span class="review-status pending">
-                  待审核
-                </span>
-              </div>
-              <p v-if="pc.description" class="review-description">
-                {{ pc.description }}
-              </p>
-              <div class="review-meta">
-                <span class="review-author">
-                  上传者：{{ pc.uploader_name || pc.author || pc.author_id || pc.uploader_id || '未知' }}
-                </span>
-                <span class="review-time">
-                  上传时间：{{ formatDate(pc.created_at) }}
-                </span>
-              </div>
-            </div>
-            <div class="review-actions">
-              <div class="review-stats">
-                <span class="review-stat">
-                  <el-icon>
-                    <Download />
-                  </el-icon>
-                  {{ pc.downloads || 0 }}
-                </span>
-                <span class="review-stat">
-                  <el-icon>
-                    <Star />
-                  </el-icon>
-                  {{ pc.star_count || 0 }}
-                </span>
-              </div>
-              <div
-                v-if="canReview"
-                class="review-action-buttons"
-              >
-                <el-button
-                  size="small"
-                  type="primary"
-                  plain
-                  @click="handleApprove(pc)"
-                >
-                  通过
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  plain
-                  @click="handleReject(pc)"
-                >
-                  拒绝
-                </el-button>
-              </div>
-            </div>
-          </div>
-
-          <div
-            v-if="!loading && reviewList.length === 0"
-            class="empty-tip"
-          >
-            暂无待审核的人设卡。
-          </div>
-        </div>
+        <ReviewList
+          :items="reviewList"
+          :loading="loading"
+          :can-review="canReview"
+          empty-text="暂无待审核的人设卡。"
+          @approve="handleApprove"
+          @reject="handleReject"
+        />
 
         <div class="pagination-section">
           <el-pagination
@@ -143,6 +80,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Star } from '@element-plus/icons-vue'
+import ReviewList from '@/components/ReviewList.vue'
 import { getPendingPersonaReview, approvePersonaCardReview, rejectPersonaCardReview } from '@/api/persona'
 import { getCurrentUser } from '@/api/user'
 import { handleApiError } from '@/utils/api'
@@ -290,17 +228,6 @@ const handleReject = async (pc) => {
   }
 }
 
-const formatDate = (value) => {
-  if (!value) {
-    return ''
-  }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return value
-  }
-  return date.toLocaleString()
-}
-
 onMounted(async () => {
   await fetchCurrentUserRole()
   await fetchReviewList()
@@ -308,18 +235,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.persona-review-container {
-  padding: 24px;
-}
-
-.layout-container {
-  max-width: 1120px;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 .filter-card {
   border-radius: 12px;
 }
@@ -339,134 +254,9 @@ onMounted(async () => {
   width: 160px;
 }
 
-.list-card {
-  border-radius: 12px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.card-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.page-title {
-  font-size: 22px;
-  margin: 0;
-}
-
-.page-subtitle {
-  margin: 0;
-  color: var(--muted-text-color);
-  font-size: 13px;
-}
-
-.review-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background-color: var(--card-background);
-  position: relative;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-}
-
-.review-item:hover {
-  background-color: var(--hover-color);
-  border-color: var(--secondary-color);
-  transform: translateY(-1px);
-}
-
-.review-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.review-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.review-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--secondary-color);
-  word-break: break-all;
-}
-
-.review-status {
-  font-size: 12px;
-  padding: 0 6px;
-  border-radius: 999px;
-}
-
-.review-status.pending {
-  background-color: rgba(246, 196, 83, 0.12);
-  color: var(--secondary-color);
-}
-
-.review-description {
-  margin: 0 0 6px;
-  color: var(--muted-text-color);
-  font-size: 13px;
-}
-
-.review-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--muted-text-color);
-}
-
-.review-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  margin-left: 24px;
-  font-size: 12px;
-}
-
-.review-stats {
-  display: flex;
-  gap: 12px;
-}
-
-.review-stat {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--muted-text-color);
-}
-
-.review-action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.empty-tip {
-  padding: 24px 0;
-  text-align: center;
-  color: #909399;
-  font-size: 14px;
-}
-
 .pagination-section {
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
 }
 </style>
-

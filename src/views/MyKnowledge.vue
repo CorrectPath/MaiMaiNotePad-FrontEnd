@@ -35,109 +35,14 @@
         </div>
 
         <div v-loading="loading">
-          <div
-            v-for="kb in sortedKnowledgeList"
-            :key="kb.id"
-            class="repo-item"
-            @click="openDetail(kb)"
-          >
-            <div class="repo-main">
-              <div class="repo-title-row">
-                <span class="repo-name">{{ kb.name }}</span>
-                <span
-                  v-if="kb.is_public && !kb.is_pending"
-                  class="repo-visibility"
-                >
-                  公开
-                </span>
-                <span
-                  v-else-if="!kb.is_public && kb.is_pending"
-                  class="repo-status pending"
-                >
-                  公开审核中
-                </span>
-                <span
-                  v-else
-                  class="repo-visibility"
-                >
-                  私有
-                </span>
-              </div>
-              <p v-if="kb.description" class="repo-description">
-                {{ kb.description }}
-              </p>
-              <div class="repo-meta">
-                <span v-if="kb.tags && kb.tags.length" class="repo-tags">
-                  <el-tag
-                    v-for="(tag, index) in kb.tags"
-                    :key="index"
-                    size="small"
-                    effect="plain"
-                  >
-                    {{ tag }}
-                  </el-tag>
-                </span>
-                <span class="repo-updated">
-                  最近更新于 {{ formatDate(kb.updated_at || kb.created_at) }}
-                </span>
-              </div>
-            </div>
-            <div class="repo-actions">
-              <div class="repo-stats">
-                <span class="repo-stat">
-                  <el-icon>
-                    <Download />
-                  </el-icon>
-                  {{ kb.downloads || 0 }}
-                </span>
-                <span class="repo-stat">
-                  <el-icon>
-                    <Star />
-                  </el-icon>
-                  {{ kb.star_count || 0 }}
-                </span>
-              </div>
-              <div class="repo-action-buttons">
-                <el-tooltip
-                  v-if="!kb.is_public && !kb.is_pending"
-                  content="编辑内容和文件"
-                  placement="top"
-                >
-                  <el-button
-                    circle
-                    text
-                    @click.stop="openEdit(kb)"
-                  >
-                    <el-icon>
-                      <Edit />
-                    </el-icon>
-                  </el-button>
-                </el-tooltip>
-                <el-tooltip
-                  v-if="!kb.is_public && !kb.is_pending"
-                  content="申请公开到知识库广场（需审核）"
-                  placement="top"
-                >
-                  <el-button
-                    circle
-                    text
-                    @click.stop="requestPublish(kb)"
-                  >
-                    <el-icon>
-                      <UploadFilled />
-                    </el-icon>
-                  </el-button>
-                </el-tooltip>
-                <el-tooltip content="删除" placement="top">
-                  <el-button circle text type="danger" @click.stop="confirmDelete(kb)">
-                    <el-icon>
-                      <Delete />
-                    </el-icon>
-                  </el-button>
-                </el-tooltip>
-              </div>
-            </div>
-          </div>
+          <MyRepoList
+            :items="sortedKnowledgeList"
+            publish-tooltip="申请公开到知识库广场（需审核）"
+            @item-click="openDetail"
+            @edit-click="openEdit"
+            @publish-click="requestPublish"
+            @delete-click="confirmDelete"
+          />
           <div
             v-if="!loading && sortedKnowledgeList.length === 0"
             class="empty-tip"
@@ -217,50 +122,12 @@
         </div>
       </div>
 
-      <el-table
+      <FileListTable
         v-if="fileList.length"
-        :data="fileList"
-        size="small"
-        border
-      >
-        <el-table-column
-          prop="original_name"
-          label="文件名"
-          min-width="260"
-        />
-        <el-table-column
-          prop="file_size"
-          label="大小"
-          width="120"
-        >
-          <template #default="scope">
-            {{ formatFileSize(scope.row.file_size) }}
-          </template>
-        </el-table-column>
-        <el-table-column
-          label="操作"
-          width="160"
-        >
-          <template #default="scope">
-            <el-button
-              type="primary"
-              text
-              size="small"
-              @click="downloadKBFile(scope.row)"
-            >
-              下载
-            </el-button>
-            <el-button
-              type="danger"
-              text
-              size="small"
-              @click="confirmDeleteFile(scope.row)"
-            >
-              删除
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+        :items="fileList"
+        @download="downloadKBFile"
+        @delete="confirmDeleteFile"
+      />
       <div
         v-else
         class="empty-tip"
@@ -383,28 +250,11 @@
 
         <div class="files-list-section">
           <h4>文件列表</h4>
-          <el-table :data="currentKB.files || []" style="width: 100%">
-            <el-table-column label="文件名" width="auto">
-              <template #default="scope">
-                {{ scope.row.original_name || '-' }}
-              </template>
-            </el-table-column>
-            <el-table-column label="大小" width="120">
-              <template #default="scope">
-                {{ formatFileSize(scope.row.file_size) }}
-              </template>
-            </el-table-column>
-            <el-table-column label="操作" width="100" fixed="right">
-              <template #default="scope">
-                <el-button type="primary" text @click="downloadDrawerFile(scope.row)">
-                  <el-icon>
-                    <Download />
-                  </el-icon>
-                  下载
-                </el-button>
-              </template>
-            </el-table-column>
-          </el-table>
+          <FileListTable
+            :items="currentKB.files || []"
+            :show-delete="false"
+            @download="downloadDrawerFile"
+          />
         </div>
       </div>
     </el-drawer>
@@ -416,6 +266,8 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { Star, Download, Delete, UploadFilled, Edit } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import MyRepoList from '@/components/MyRepoList.vue'
+import FileListTable from '@/components/FileListTable.vue'
 import {
   getUserKnowledgeBase,
   getKnowledgeBaseDetail,
@@ -976,37 +828,8 @@ onMounted(async () => {
   padding: 24px;
 }
 
-.layout-container {
-  max-width: 1120px;
-  margin: 0 auto;
-}
-
 .list-card {
   border-radius: 12px;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.card-title-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.page-title {
-  font-size: 22px;
-  margin: 0;
-}
-
-.page-subtitle {
-  margin: 0;
-  color: var(--muted-text-color);
-  font-size: 13px;
 }
 
 .tags-editor {
@@ -1032,115 +855,6 @@ onMounted(async () => {
 
 .toolbar-sort {
   width: 160px;
-}
-
-.repo-item {
-  display: flex;
-  justify-content: space-between;
-  padding: 14px 16px;
-  margin-bottom: 12px;
-  border-radius: 10px;
-  border: 1px solid var(--border-color);
-  background-color: var(--card-background);
-  position: relative;
-  cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, transform 0.1s ease;
-}
-
-.repo-item:hover {
-  background-color: var(--hover-color);
-  border-color: var(--secondary-color);
-  transform: translateY(-1px);
-}
-
-.repo-main {
-  flex: 1;
-  min-width: 0;
-}
-
-.repo-title-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.repo-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--secondary-color);
-  word-break: break-all;
-}
-
-.repo-visibility {
-  font-size: 12px;
-  padding: 0 6px;
-  border-radius: 999px;
-  border: 1px solid var(--border-color);
-  color: var(--muted-text-color);
-}
-
-.repo-status {
-  font-size: 12px;
-  padding: 0 6px;
-  border-radius: 999px;
-}
-
-.repo-status.pending {
-  background-color: rgba(246, 196, 83, 0.12);
-  color: var(--secondary-color);
-}
-
-.repo-description {
-  margin: 0 0 6px;
-  color: var(--muted-text-color);
-  font-size: 13px;
-}
-
-.repo-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--muted-text-color);
-}
-
-.repo-tags :deep(.el-tag) {
-  margin-right: 4px;
-}
-
-.repo-updated {
-  white-space: nowrap;
-}
-
-.repo-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  margin-left: 24px;
-  font-size: 12px;
-}
-
-.repo-stats {
-  display: flex;
-  gap: 12px;
-}
-
-.repo-stat {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  color: var(--muted-text-color);
-}
-
-.repo-action-buttons {
-  position: absolute;
-  right: 16px;
-  bottom: 10px;
-  display: flex;
-  gap: 4px;
 }
 
 .empty-tip {
