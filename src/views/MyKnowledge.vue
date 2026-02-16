@@ -291,10 +291,13 @@ import {
 } from '@/api/knowledge'
 import { handleApiError, formatFileSize, formatDate } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
+import { useKnowledgeStore } from '@/stores/knowledge'
 
 const router = useRouter()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
+const knowledgeStore = useKnowledgeStore()
+const { currentKB } = storeToRefs(knowledgeStore)
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
@@ -315,7 +318,6 @@ const fileList = ref([])
 const fileInput = ref(null)
 
 const detailDrawerVisible = ref(false)
-const currentKB = ref(null)
 const remarkContent = ref('')
 const editingRemark = ref(false)
 
@@ -493,7 +495,7 @@ const openDetail = async (kb) => {
     const response = await getKnowledgeBaseDetail(kb.id)
     if (response && response.success) {
       const data = response.data || {}
-      currentKB.value = data
+      knowledgeStore.setCurrentKB(data)
       remarkContent.value = data.content || ''
       editingRemark.value = false
       detailDrawerVisible.value = true

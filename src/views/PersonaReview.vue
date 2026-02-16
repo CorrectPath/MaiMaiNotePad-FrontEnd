@@ -219,6 +219,7 @@ import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import { getPendingPersonaReview, approvePersonaCardReview, rejectPersonaCardReview, getPersonaCardDetail } from '@/api/persona'
 import { handleApiError } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
+import { usePersonaStore } from '@/stores/persona'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
@@ -227,9 +228,10 @@ const reviewList = ref([])
 const canReview = ref(false)
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
+const personaStore = usePersonaStore()
+const { currentPersona: selectedCard } = storeToRefs(personaStore)
 
 const detailDialogVisible = ref(false)
-const selectedCard = ref({})
 
 const fileViewerVisible = ref(false)
 const fileViewerTitle = ref('')

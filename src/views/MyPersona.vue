@@ -291,10 +291,13 @@ import {
 } from '@/api/persona'
 import { handleApiError, formatFileSize, formatDate } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
+import { usePersonaStore } from '@/stores/persona'
 
 const router = useRouter()
 const userStore = useUserStore()
 const { user } = storeToRefs(userStore)
+const personaStore = usePersonaStore()
+const { currentPersona } = storeToRefs(personaStore)
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
@@ -313,7 +316,6 @@ const fileList = ref([])
 const fileInput = ref(null)
 
 const detailDrawerVisible = ref(false)
-const currentPersona = ref(null)
 const remarkContent = ref('')
 const editingRemark = ref(false)
 
@@ -515,7 +517,7 @@ const openDetail = async (pc) => {
     const response = await getPersonaCardDetail(pc.id)
     if (response && response.success) {
       const data = response.data || {}
-      currentPersona.value = data
+      personaStore.setCurrentPersona(data)
       remarkContent.value = data.content || ''
       editingRemark.value = false
       detailDrawerVisible.value = true

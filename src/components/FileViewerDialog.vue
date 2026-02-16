@@ -1287,9 +1287,6 @@ const handleDownload = () => {
   padding: 12px 14px;
 }
 
-.code-line {
-}
-
 .code-line-pre {
   margin: 0;
   white-space: pre;

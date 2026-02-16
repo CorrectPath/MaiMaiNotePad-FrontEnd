@@ -303,11 +303,13 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Star, StarFilled, Download, View } from '@element-plus/icons-vue'
 import { ElMessage, ElAvatar, ElIcon } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import { getPublicPersonaCards, starPersonaCard, unstarPersonaCard, getPersonaCardDetail, checkPersonaCardStarred } from '@/api/persona'
 import { handleApiError } from '@/utils/api'
+import { usePersonaStore } from '@/stores/persona'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
@@ -332,7 +334,8 @@ const personaCards = ref([])
 
 // 详情弹窗
 const dialogVisible = ref(false)
-const selectedCard = ref({})
+const personaStore = usePersonaStore()
+const { currentPersona: selectedCard } = storeToRefs(personaStore)
 
 const fileViewerVisible = ref(false)
 const fileViewerTitle = ref('')

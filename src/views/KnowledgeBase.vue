@@ -145,7 +145,7 @@
     <!-- 详情抽屉 -->
     <el-drawer
       v-model="dialogVisible"
-      :title="selectedKB.name"
+      :title="safeSelectedKB.name || '知识库详情'"
       direction="rtl"
       size="75%"
       :with-header="true"
@@ -155,19 +155,19 @@
         <!-- 基本信息 -->
         <div class="basic-info">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="名称">{{ selectedKB.name || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="作者">{{ getAuthorName(selectedKB) }}</el-descriptions-item>
-            <el-descriptions-item label="创建时间">{{ formatDate(selectedKB.created_at) }}</el-descriptions-item>
-            <el-descriptions-item label="更新时间">{{ formatDate(selectedKB.updated_at) }}</el-descriptions-item>
-            <el-descriptions-item label="下载量">{{ selectedKB.downloads || 0 }}</el-descriptions-item>
-            <el-descriptions-item label="收藏量">{{ selectedKB.star_count || 0 }}</el-descriptions-item>
+            <el-descriptions-item label="名称">{{ safeSelectedKB.name || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="作者">{{ getAuthorName(safeSelectedKB) }}</el-descriptions-item>
+            <el-descriptions-item label="创建时间">{{ formatDate(safeSelectedKB.created_at) }}</el-descriptions-item>
+            <el-descriptions-item label="更新时间">{{ formatDate(safeSelectedKB.updated_at) }}</el-descriptions-item>
+            <el-descriptions-item label="下载量">{{ safeSelectedKB.downloads || 0 }}</el-descriptions-item>
+            <el-descriptions-item label="收藏量">{{ safeSelectedKB.star_count || 0 }}</el-descriptions-item>
             <el-descriptions-item label="标签" :span="2">
-              <span v-if="selectedKB.tags && selectedKB.tags.length > 0">
-                <el-tag v-for="(tag, index) in selectedKB.tags" :key="index" size="small" style="margin-right: 5px;">{{ tag }}</el-tag>
+              <span v-if="safeSelectedKB.tags && safeSelectedKB.tags.length > 0">
+                <el-tag v-for="(tag, index) in safeSelectedKB.tags" :key="index" size="small" style="margin-right: 5px;">{{ tag }}</el-tag>
               </span>
               <span v-else>-</span>
             </el-descriptions-item>
-            <el-descriptions-item label="描述" :span="2">{{ selectedKB.description || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="描述" :span="2">{{ safeSelectedKB.description || '-' }}</el-descriptions-item>
           </el-descriptions>
         </div>
 
@@ -182,7 +182,7 @@
         <!-- 文件列表 -->
         <div class="files-list-section">
           <h4>文件列表</h4>
-          <el-table :data="selectedKB.files || []" style="width: 100%">
+          <el-table :data="safeSelectedKB.files || []" style="width: 100%">
             <el-table-column label="文件名" width="auto">
               <template #default="scope">{{ scope.row.original_name || '-' }}</template>
             </el-table-column>
@@ -245,12 +245,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Star, StarFilled, Download, View } from '@element-plus/icons-vue'
 import { ElMessage, ElIcon, ElAvatar } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import { getPublicKnowledgeBase, starKnowledgeBase, unstarKnowledgeBase, getKnowledgeBaseDetail, checkKnowledgeBaseStarred } from '@/api/knowledge'
 import { handleApiError } from '@/utils/api'
+import { useKnowledgeStore } from '@/stores/knowledge'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
@@ -276,7 +278,9 @@ const knowledgeBases = ref([])
 
 // 详情弹窗
 const dialogVisible = ref(false)
-const selectedKB = ref({})
+const knowledgeStore = useKnowledgeStore()
+const { currentKB: selectedKB } = storeToRefs(knowledgeStore)
+const safeSelectedKB = computed(() => selectedKB.value || {})
 
 const fileViewerVisible = ref(false)
 const fileViewerTitle = ref('')
