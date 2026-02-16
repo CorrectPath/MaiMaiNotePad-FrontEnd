@@ -9,28 +9,32 @@
 ## 功能特性
 
 ### 用户与认证
-- 用户登录、退出
+- 用户注册、登录、退出
 - 记住账号信息（可选）
 - 基于 JWT 的前端鉴权
 - 自动在请求中附带 `Authorization: Bearer {token}`
 - 自动刷新访问令牌（access token），在 token 过期时通过后端 `/api/refresh` 接口获取新 token
+- 找回/重置密码流程（验证码 + 新密码设置）
 
 ### 知识库模块
 - 显示公开知识库列表（分页、搜索、筛选）
 - 查看知识库详情
-- 下载单个知识库文件
-- 下载知识库文件压缩包
-- 按 Star 状态展示部分交互（后端支持完备，前端部分视图已接入）
+- 下载单个知识库文件或整库压缩包
+- 我的知识库：上传、编辑、删除知识库及文件
+- 知识库申请公开（需审核）与状态展示（私有/审核中/已公开/已驳回）
 
 ### 人设卡模块
 - 显示公开人设卡列表（分页、搜索、筛选）
 - 查看人设卡详情
 - Star/取消 Star 人设卡
 - 下载单个文件与整卡压缩包
+- 我的人设卡：上传、编辑、删除人设卡及文件
+- 人设卡申请公开（需审核）与状态展示（私有/审核中/已公开/已驳回）
 
 ### 用户中心与个人功能
 - 获取当前登录用户信息（`/api/users/me`）
-- 查看个人上传/收藏等数据的基础视图（部分功能依赖后端接口逐步接入）
+- 查看个人上传记录与统计（与后端 `/api/me/upload-*` 接口对齐）
+- 查看个人 Star 的知识库与人设卡
 
 ### 全局布局与导航
 - 左侧整列菜单 + 顶部导航布局
@@ -69,20 +73,30 @@ MaiMaiNotePad-FrontEnd/
 │   │   ├── index.js         # Axios 实例与拦截器（含自动刷新 token）
 │   │   ├── user.js          # 用户相关接口
 │   │   ├── knowledge.js     # 知识库相关接口
-│   │   └── persona.js       # 人设卡相关接口
+│   │   ├── persona.js       # 人设卡相关接口
+│   │   ├── messages.js      # 站内消息相关接口
+│   │   └── admin.js         # 管理员与审核相关接口
 │   ├── assets/              # 静态资源
 │   ├── components/          # 通用组件
 │   ├── router/
 │   │   └── index.js         # 路由配置
 │   ├── utils/
-│   │   └── api.js           # 通用 API 响应/错误处理工具
+│   │   ├── api.js           # 通用 API 响应/错误处理工具
+│   │   └── websocket.js     # WebSocket 管理与心跳
 │   ├── views/
-│   │   ├── Home.vue         # 首页
-│   │   ├── Login.vue        # 登录页
-│   │   ├── Register.vue     # 注册页
-│   │   ├── KnowledgeBase.vue # 知识库列表与详情
-│   │   ├── PersonaCard.vue  # 人设卡列表与详情
-│   │   └── UserCenter.vue   # 用户中心（基础结构）
+│   │   ├── Home.vue             # 首页 + 消息及在线状态
+│   │   ├── Login.vue            # 登录页
+│   │   ├── Register.vue         # 注册页
+│   │   ├── ResetPassword.vue    # 重置密码
+│   │   ├── KnowledgeBase.vue    # 公共知识库列表与详情
+│   │   ├── MyKnowledge.vue      # 我的知识库管理
+│   │   ├── KnowledgeUpload.vue  # 知识库上传
+│   │   ├── KnowledgeReview.vue  # 知识库审核（管理员/审核员）
+│   │   ├── PersonaCard.vue      # 公共人设卡列表与详情
+│   │   ├── MyPersona.vue        # 我的人设卡管理
+│   │   ├── PersonaUpload.vue    # 人设卡上传
+│   │   ├── PersonaReview.vue    # 人设卡审核（管理员/审核员）
+│   │   └── UserCenter.vue       # 用户中心
 │   ├── App.vue              # 根组件
 │   ├── main.js              # 应用入口
 │   └── style.css            # 全局样式
@@ -203,8 +217,8 @@ npm run preview
 - [x] 查看知识库详情
 - [x] 下载单个文件
 - [x] 下载整库压缩包
-- [ ] 个人上传记录视图与管理操作（删除、编辑等）
-- [ ] Star/取消 Star 的前端交互与状态同步全面对齐文档
+- [x] 个人上传记录视图与管理操作（删除、编辑等）
+- [x] Star/取消 Star 的前端交互与状态同步全面对齐文档
 
 ### 人设卡模块
 
@@ -213,7 +227,7 @@ npm run preview
 - [x] Star/取消 Star 人设卡
 - [x] 下载单个文件
 - [x] 下载人设卡压缩包
-- [ ] 个人人设卡管理视图（我的上传、人设卡审核状态等）
+- [x] 个人人设卡管理视图（我的上传、人设卡审核状态等）
 
 ### 用户中心与管理
 
