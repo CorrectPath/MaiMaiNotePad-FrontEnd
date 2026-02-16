@@ -274,6 +274,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Star, Download, Delete, UploadFilled, Edit } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -288,16 +289,17 @@ import {
   addFilesToKnowledgeBase,
   deleteFileFromKnowledgeBase
 } from '@/api/knowledge'
-import { getCurrentUser } from '@/api/user'
 import { handleApiError, formatFileSize, formatDate } from '@/utils/api'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
+const { user } = storeToRefs(userStore)
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
 const loading = ref(false)
 const knowledgeList = ref([])
-const userId = ref('')
 const sortOption = ref('updated_desc')
 
 const editDialogVisible = ref(false)
@@ -336,22 +338,18 @@ const pagination = reactive({
   total: 0
 })
 
-const fetchUserInfo = async () => {
-  try {
-    const response = await getCurrentUser()
-    if (response && response.id) {
-      userId.value = response.id
-    } else if (response && response.data && response.data.id) {
-      userId.value = response.data.id
-    }
-  } catch (error) {
-    const message = handleApiError(error, '获取用户信息失败')
-    ElMessage.error(message)
-  }
-}
-
 const fetchKnowledge = async () => {
-  if (!userId.value) {
+  if (!user.value || !user.value.id) {
+    try {
+      await userStore.fetchCurrentUser()
+    } catch (error) {
+      const message = handleApiError(error, '获取用户信息失败')
+      ElMessage.error(message)
+      return
+    }
+  }
+  const currentUserId = user.value && user.value.id
+  if (!currentUserId) {
     return
   }
   loading.value = true
@@ -363,7 +361,7 @@ const fetchKnowledge = async () => {
     if (searchForm.name) {
       params.name = searchForm.name
     }
-    const response = await getUserKnowledgeBase(userId.value, params)
+    const response = await getUserKnowledgeBase(currentUserId, params)
     if (response.success) {
       knowledgeList.value = response.data || response.items || []
       pagination.total = response.total || 0
@@ -925,7 +923,6 @@ const goToUpload = () => {
 }
 
 onMounted(async () => {
-  await fetchUserInfo()
   await fetchKnowledge()
 })
 </script>

@@ -224,34 +224,33 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
 import { UserFilled, Collection, Fold, Expand, Bell, RefreshRight, Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getCurrentUser } from '@/api/user'
 import { handleApiError } from '@/utils/api'
-import { getMessages, markMessageRead } from '@/api/messages'
 import websocket from '@/utils/websocket'
+import { useUserStore } from '@/stores/user'
+import { useMessageStore } from '@/stores/messages'
+import { useConnectionStore } from '@/stores/connection'
 
 const router = useRouter()
 const route = useRoute()
-const userAvatar = ref('')
-const userRole = ref('user')
-const isOnline = ref(false)
+const userStore = useUserStore()
+const messageStore = useMessageStore()
+const connectionStore = useConnectionStore()
+const { user, isAdmin } = storeToRefs(userStore)
+const { items: messages, unreadCount } = storeToRefs(messageStore)
+const { isOnline } = storeToRefs(connectionStore)
 let messagePollTimer = null
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 const isCollapsed = ref(false)
-const messages = ref([])
-const messageLoading = ref(false)
 const messagePopoverVisible = ref(false)
 const messageDialogVisible = ref(false)
 const selectedMessage = ref(null)
 
-const isAdmin = computed(() => {
-  return userRole.value === 'admin'
-})
-
-const unreadCount = computed(() => {
-  return messages.value.filter((item) => !item.is_read).length
+const userAvatar = computed(() => {
+  return resolveAvatarUrl(user.value)
 })
 
 const currentMessageIndex = computed(() => {
@@ -313,70 +312,22 @@ const formatMessageTime = (value) => {
   return `${y}-${m}-${d} ${hh}:${mm}`
 }
 
-const fetchMessages = async () => {
-  if (messageLoading.value) {
-    return
-  }
-  messageLoading.value = true
-  try {
-    const response = await getMessages(1, 20)
-    if (response.success) {
-      messages.value = response.data || []
-    } else {
-      ElMessage.error(response.message || '获取消息列表失败')
-    }
-  } catch (error) {
-    const errorMessage = handleApiError(error, '获取消息列表失败，请检查网络连接')
-    ElMessage.error(errorMessage)
-  } finally {
-    messageLoading.value = false
-  }
-}
-
 const refreshMessages = () => {
-  fetchMessages()
+  messageStore.refreshMessages()
 }
 
 const handleWebsocketMessage = () => {
-  fetchMessages()
+  messageStore.refreshMessages()
 }
 
 const handleMarkAllRead = async () => {
-  const unreadMessages = messages.value.filter((item) => !item.is_read)
-  if (!unreadMessages.length) {
-    return
-  }
-  try {
-    const tasks = unreadMessages.map((msg) =>
-      markMessageRead(msg.id).then((response) => {
-        if (response && response.success) {
-          msg.is_read = true
-        }
-      })
-    )
-    await Promise.all(tasks)
-  } catch (error) {
-    const errorMessage = handleApiError(error, '一键标记已读失败，请检查网络连接')
-    ElMessage.error(errorMessage)
-  }
+  await messageStore.markAllRead()
 }
 
 const getUserInfo = async () => {
   try {
-    const response = await getCurrentUser()
-    if (response && response.success) {
-      const data = response.data || {}
-      userAvatar.value = resolveAvatarUrl(data)
-      userRole.value = data.role || 'user'
-    } else if (response && response.data) {
-      const data = response.data
-      userAvatar.value = resolveAvatarUrl(data)
-      userRole.value = data.role || 'user'
-    } else {
-      console.error('获取用户信息失败:', response && response.message)
-    }
+    await userStore.fetchCurrentUser()
   } catch (error) {
-    console.error('获取用户信息错误:', error)
     const errorMessage = handleApiError(error, '获取用户信息失败，请检查网络连接')
     console.error('获取用户信息错误:', errorMessage)
   }
@@ -390,21 +341,7 @@ const handleMessageClick = async (msg) => {
   selectedMessage.value = msg
   messageDialogVisible.value = true
 
-  if (msg.is_read) {
-    return
-  }
-
-  try {
-    const response = await markMessageRead(msg.id)
-    if (response && response.success) {
-      msg.is_read = true
-    } else if (response && response.message) {
-      ElMessage.error(response.message)
-    }
-  } catch (error) {
-    const errorMessage = handleApiError(error, '标记消息已读失败，请检查网络连接')
-    ElMessage.error(errorMessage)
-  }
+  await messageStore.markRead(msg)
 }
 
 const showMessageAtIndex = async (index) => {
@@ -419,21 +356,7 @@ const showMessageAtIndex = async (index) => {
   selectedMessage.value = msg
   messageDialogVisible.value = true
 
-  if (msg.is_read) {
-    return
-  }
-
-  try {
-    const response = await markMessageRead(msg.id)
-    if (response && response.success) {
-      msg.is_read = true
-    } else if (response && response.message) {
-      ElMessage.error(response.message)
-    }
-  } catch (error) {
-    const errorMessage = handleApiError(error, '标记消息已读失败，请检查网络连接')
-    ElMessage.error(errorMessage)
-  }
+  await messageStore.markRead(msg)
 }
 
 const handleShowPrevMessage = () => {
@@ -469,18 +392,14 @@ const handleUserCommand = (command) => {
 
 onMounted(() => {
   getUserInfo()
-  fetchMessages()
+  messageStore.fetchMessages()
   websocket.subscribeStatus((status) => {
-    if (status === 'open' || status === 'message') {
-      isOnline.value = true
-    } else if (status === 'closed' || status === 'error') {
-      isOnline.value = false
-    }
+    connectionStore.setStatus(status)
   })
   websocket.init(handleWebsocketMessage)
   if (!messagePollTimer) {
     messagePollTimer = setInterval(() => {
-      fetchMessages()
+      messageStore.fetchMessages()
     }, 10000)
   }
 })
@@ -497,8 +416,8 @@ onUnmounted(() => {
 watch(
   messagePopoverVisible,
   (visible) => {
-    if (visible && messages.value.length === 0 && !messageLoading.value) {
-      fetchMessages()
+    if (visible && messages.value.length === 0 && !messageStore.loading) {
+      messageStore.fetchMessages()
     }
   }
 )

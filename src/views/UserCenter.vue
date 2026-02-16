@@ -5,7 +5,7 @@
         <div class="card-header">
           <div class="card-title-group">
             <h2 class="page-title">个人中心</h2>
-            <p class="page-subtitle">管理账号信息与安全设置</p>
+            <p class="page-subtitle">管理账号信息、安全设置与个人上传统计</p>
           </div>
         </div>
         <el-tabs v-model="activeTab" class="user-center-tabs">
@@ -112,6 +112,45 @@
               </el-form>
             </div>
           </el-tab-pane>
+          <el-tab-pane label="上传统计" name="stats">
+            <div class="stats-section">
+              <h3 class="section-title">我的上传统计</h3>
+              <div class="stats-content" v-if="!statsLoading && myStats">
+                <div class="stats-grid">
+                  <div class="stats-item">
+                    <div class="stats-label">总上传次数</div>
+                    <div class="stats-value">{{ myStats.totalUploads ?? myStats.total ?? 0 }}</div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-label">成功</div>
+                    <div class="stats-value">{{ myStats.successCount ?? myStats.success ?? 0 }}</div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-label">处理中</div>
+                    <div class="stats-value">{{ myStats.processingCount ?? myStats.pending ?? 0 }}</div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-label">失败</div>
+                    <div class="stats-value">{{ myStats.failedCount ?? myStats.failed ?? 0 }}</div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-label">知识库上传数</div>
+                    <div class="stats-value">{{ myStats.knowledge ?? 0 }}</div>
+                  </div>
+                  <div class="stats-item">
+                    <div class="stats-label">人设卡上传数</div>
+                    <div class="stats-value">{{ myStats.persona ?? 0 }}</div>
+                  </div>
+                </div>
+              </div>
+              <div v-else-if="statsLoading" class="stats-loading">
+                正在加载统计数据...
+              </div>
+              <div v-else class="stats-empty">
+                暂无统计数据
+              </div>
+            </div>
+          </el-tab-pane>
         </el-tabs>
       </el-card>
     </div>
@@ -120,13 +159,20 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { changePassword, getCurrentUser, uploadAvatar, deleteAvatar } from '@/api/user'
+import { changePassword, uploadAvatar, deleteAvatar } from '@/api/user'
 import { handleApiError } from '@/utils/api'
+import { useUserStore } from '@/stores/user'
+import { useStatsStore } from '@/stores/stats'
 
 const passwordFormRef = ref()
 const activeTab = ref('profile')
-const userInfo = ref(null)
+const userStore = useUserStore()
+const { user } = storeToRefs(userStore)
+const userInfo = user
+const statsStore = useStatsStore()
+const { myStats, myStatsLoading } = storeToRefs(statsStore)
 const isAvatarUploading = ref(false)
 const isAvatarDeleting = ref(false)
 const fileInputRef = ref(null)
@@ -179,16 +225,15 @@ const avatarUrl = computed(() => {
 
 const fetchUserInfo = async () => {
   try {
-    const response = await getCurrentUser()
-    if (response.success) {
-      userInfo.value = response.data || {}
-    } else {
-      ElMessage.error(response.message || '获取用户信息失败')
-    }
+    await userStore.fetchCurrentUser(true)
   } catch (error) {
     const errorMessage = handleApiError(error, '获取用户信息失败，请检查网络连接')
     ElMessage.error(errorMessage)
   }
+}
+
+const fetchMyStats = async () => {
+  await statsStore.fetchMyStats()
 }
 
 const triggerAvatarSelect = () => {
@@ -285,6 +330,7 @@ const handleChangePassword = async () => {
 
 onMounted(() => {
   fetchUserInfo()
+  fetchMyStats()
 })
 </script>
 

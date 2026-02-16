@@ -211,19 +211,22 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, View } from '@element-plus/icons-vue'
 import ReviewList from '@/components/ReviewList.vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import { getPendingPersonaReview, approvePersonaCardReview, rejectPersonaCardReview, getPersonaCardDetail } from '@/api/persona'
-import { getCurrentUser } from '@/api/user'
 import { handleApiError } from '@/utils/api'
+import { useUserStore } from '@/stores/user'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
 const loading = ref(false)
 const reviewList = ref([])
 const canReview = ref(false)
+const userStore = useUserStore()
+const { user } = storeToRefs(userStore)
 
 const detailDialogVisible = ref(false)
 const selectedCard = ref({})
@@ -251,12 +254,11 @@ const pagination = reactive({
 
 const fetchCurrentUserRole = async () => {
   try {
-    const response = await getCurrentUser()
-    if (response && response.success && response.data) {
-      canReview.value = ['admin', 'moderator'].includes(response.data.role)
-    } else if (response && response.data) {
-      canReview.value = ['admin', 'moderator'].includes(response.data.role)
+    if (!user.value || !user.value.role) {
+      await userStore.fetchCurrentUser()
     }
+    const role = user.value && user.value.role
+    canReview.value = role === 'admin' || role === 'moderator'
   } catch (error) {
     const message = handleApiError(error, '获取用户信息失败')
     ElMessage.error(message)
