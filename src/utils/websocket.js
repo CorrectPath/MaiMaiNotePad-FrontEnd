@@ -46,7 +46,11 @@ const websocket = {
   reconnectCurrent: 1,
   reconnectTimer: null,
   reconnectInterval: 5000,
+  messageHandler: null,
   init(receiveMessage) {
+    if (typeof receiveMessage === 'function') {
+      this.messageHandler = receiveMessage
+    }
     if (typeof window === 'undefined' || !('WebSocket' in window)) {
       this.socketOpen = false
       notifyStatus('closed')
@@ -73,8 +77,8 @@ const websocket = {
 
     ws.onmessage = (event) => {
       notifyStatus('message')
-      if (receiveMessage) {
-        receiveMessage(event)
+      if (this.messageHandler) {
+        this.messageHandler(event)
       }
     }
 
@@ -151,7 +155,7 @@ const websocket = {
     if (this.websocket) {
       this.close()
     }
-    this.init(null)
+    this.init(this.messageHandler)
   },
   subscribeStatus(listener) {
     if (typeof listener !== 'function') {

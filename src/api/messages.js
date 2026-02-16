@@ -15,3 +15,22 @@ export const markMessageRead = (messageId) => {
   return apiClient.post(`/messages/${messageId}/read`)
 }
 
+export const getMessageDetail = (messageId) => {
+  return apiClient.get(`/messages/${messageId}`)
+}
+
+export const deleteMessage = (messageId) => {
+  return apiClient.delete(`/messages/${messageId}`)
+}
+
+export const updateMessage = (messageId, payload) => {
+  return apiClient.put(`/messages/${messageId}`, payload)
+}
+
+export const sendMessage = (payload) => {
+  return apiClient.post('/messages/send', payload)
+}
+
+export const getBroadcastMessages = (params = {}) => {
+  return apiClient.get('/admin/broadcast-messages', { params })
+}

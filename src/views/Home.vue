@@ -17,12 +17,20 @@
         :unique-opened="true"
         :default-active="$route.path"
       >
-        <el-menu-item index="/persona-card">
-          <el-icon>
-            <User />
-          </el-icon>
-          <span class="menu-label">人设卡</span>
-        </el-menu-item>
+        <el-sub-menu index="/persona-group">
+          <template #title>
+            <el-icon>
+              <User />
+            </el-icon>
+            <span class="menu-label">人设卡</span>
+          </template>
+          <el-menu-item index="/persona-card">
+            <span class="menu-label">人设卡广场</span>
+          </el-menu-item>
+          <el-menu-item index="/my-persona">
+            <span class="menu-label">我的人设卡</span>
+          </el-menu-item>
+        </el-sub-menu>
         <el-sub-menu index="/knowledge-group">
           <template #title>
             <el-icon>
@@ -46,6 +54,9 @@
           </template>
           <el-menu-item index="/knowledge-review">
             <span class="menu-label">知识库审核</span>
+          </el-menu-item>
+          <el-menu-item index="/persona-review">
+            <span class="menu-label">人设卡审核</span>
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -226,6 +237,7 @@ const route = useRoute()
 const userAvatar = ref('')
 const userRole = ref('user')
 const isOnline = ref(false)
+let messagePollTimer = null
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 const isCollapsed = ref(false)
 const messages = ref([])
@@ -271,10 +283,13 @@ const resolveAvatarUrl = (userData) => {
 }
 
 const pageTitleMap = {
-  '/persona-card': '人设卡',
+  '/persona-card': '人设卡广场',
+  '/my-persona': '我的人设卡',
+  '/persona-upload': '创建人设卡',
+  '/persona-review': '人设卡审核',
   '/knowledge-base': '知识库广场',
   '/my-knowledge': '我的知识库',
-  '/knowledge-review': '审核列表',
+  '/knowledge-review': '知识库审核',
   '/user-center': '个人中心'
 }
 
@@ -299,6 +314,9 @@ const formatMessageTime = (value) => {
 }
 
 const fetchMessages = async () => {
+  if (messageLoading.value) {
+    return
+  }
   messageLoading.value = true
   try {
     const response = await getMessages(1, 20)
@@ -451,6 +469,7 @@ const handleUserCommand = (command) => {
 
 onMounted(() => {
   getUserInfo()
+  fetchMessages()
   websocket.subscribeStatus((status) => {
     if (status === 'open' || status === 'message') {
       isOnline.value = true
@@ -459,9 +478,18 @@ onMounted(() => {
     }
   })
   websocket.init(handleWebsocketMessage)
+  if (!messagePollTimer) {
+    messagePollTimer = setInterval(() => {
+      fetchMessages()
+    }, 10000)
+  }
 })
 
 onUnmounted(() => {
+  if (messagePollTimer) {
+    clearInterval(messagePollTimer)
+    messagePollTimer = null
+  }
   websocket.unsubscribeStatus()
   websocket.close()
 })

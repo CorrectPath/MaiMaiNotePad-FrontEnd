@@ -3,6 +3,9 @@ import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Home from '../views/Home.vue'
 import PersonaCard from '../views/PersonaCard.vue'
+import MyPersona from '../views/MyPersona.vue'
+import PersonaUpload from '../views/PersonaUpload.vue'
+import PersonaReview from '../views/PersonaReview.vue'
 import KnowledgeBase from '../views/KnowledgeBase.vue'
 import MyKnowledge from '../views/MyKnowledge.vue'
 import UserCenter from '../views/UserCenter.vue'
@@ -53,7 +56,23 @@ const routes = [
         name: 'PersonaCard',
         component: PersonaCard,
         meta: {
-          pageTitle: '人设卡'
+          pageTitle: '人设卡广场'
+        }
+      },
+      {
+        path: '/my-persona',
+        name: 'MyPersona',
+        component: MyPersona,
+        meta: {
+          pageTitle: '我的人设卡'
+        }
+      },
+      {
+        path: '/persona-upload',
+        name: 'PersonaUpload',
+        component: PersonaUpload,
+        meta: {
+          pageTitle: '创建人设卡'
         }
       },
       {
@@ -85,7 +104,15 @@ const routes = [
         name: 'KnowledgeReview',
         component: KnowledgeReview,
         meta: {
-          pageTitle: '审核列表'
+          pageTitle: '知识库审核'
+        }
+      },
+      {
+        path: '/persona-review',
+        name: 'PersonaReview',
+        component: PersonaReview,
+        meta: {
+          pageTitle: '人设卡审核'
         }
       },
       {

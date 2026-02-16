@@ -4,61 +4,52 @@
       <!-- 搜索栏 -->
       <div class="search-section">
         <el-card shadow="hover" class="search-card">
-          <el-form :model="searchForm" class="search-form" label-width="100px">
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="名称">
-                  <el-input
-                    v-model="searchForm.name"
-                    placeholder="请输入人设卡名称"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="作者">
-                  <el-input
-                    v-model="searchForm.uploader_id"
-                    placeholder="请输入作者ID"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="标签">
-                  <el-input
-                    v-model="searchForm.tag"
-                    placeholder="请输入标签"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="排序字段">
-                  <el-select v-model="searchForm.sort_by" placeholder="请选择排序字段" class="sort-select">
-                    <el-option label="创建时间" value="created_at"></el-option>
-                    <el-option label="更新时间" value="updated_at"></el-option>
-                    <el-option label="名称" value="name"></el-option>
-                    <el-option label="下载量" value="downloads"></el-option>
-                    <el-option label="收藏量" value="star_count"></el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="排序顺序">
-                  <el-select v-model="searchForm.sort_order" placeholder="请选择排序顺序" class="sort-select">
-                    <el-option label="升序" value="asc"></el-option>
-                    <el-option label="降序" value="desc"></el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8" class="search-buttons">
-                <el-form-item>
-                  <el-button-group>
-                    <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
-                    <el-button @click="resetSearch" class="reset-btn">重置</el-button>
-                  </el-button-group>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-form>
+          <div class="search-toolbar">
+            <el-input
+              v-model="searchForm.name"
+              placeholder="搜索人设卡名称或描述"
+              clearable
+              class="search-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-input
+              v-model="searchForm.uploader_id"
+              placeholder="作者用户名或ID"
+              clearable
+              class="filter-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-input
+              v-model="searchForm.tag"
+              placeholder="标签"
+              clearable
+              class="filter-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-select
+              v-model="searchForm.sort_by"
+              class="sort-select"
+              @change="handleSearch"
+            >
+              <el-option label="创建时间" value="created_at" />
+              <el-option label="更新时间" value="updated_at" />
+              <el-option label="名称" value="name" />
+              <el-option label="下载量" value="downloads" />
+              <el-option label="收藏量" value="star_count" />
+            </el-select>
+            <el-select
+              v-model="searchForm.sort_order"
+              class="sort-order-select"
+              @change="handleSearch"
+            >
+              <el-option label="降序" value="desc" />
+              <el-option label="升序" value="asc" />
+            </el-select>
+            <el-button type="primary" @click="handleSearch" class="search-btn">
+              搜索
+            </el-button>
+            <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+          </div>
         </el-card>
       </div>
 
@@ -481,23 +472,33 @@ onMounted(() => {
   border-color: var(--border-color);
 }
 
-.search-form {
-  margin-bottom: 0;
-}
-
-.search-buttons {
-  display: flex;
-  align-items: flex-end;
-  gap: 10px;
-}
-
 .search-btn {
   background-color: var(--secondary-color);
   border-color: var(--secondary-color);
 }
 
+.search-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-input {
+  width: 180px;
+}
+
 .sort-select {
-  width: 100%;
+  width: 140px;
+}
+
+.sort-order-select {
+  width: 120px;
 }
 
 .persona-card-list-container {

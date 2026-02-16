@@ -1,15 +1,15 @@
 <template>
-  <div class="my-knowledge-container">
+  <div class="my-persona-container">
     <div class="layout-container">
       <el-card class="list-card" shadow="hover">
         <div class="card-header">
           <div class="card-title-group">
-            <h2 class="page-title">我的知识库</h2>
-            <p class="page-subtitle">管理自己上传的知识库，支持删除和公开设置</p>
+            <h2 class="page-title">我的人设卡</h2>
+            <p class="page-subtitle">管理自己上传的人设卡，支持查看详情和删除</p>
           </div>
           <div class="card-actions">
             <el-button type="primary" @click="goToUpload">
-              上传新的知识库
+              创建新的人设卡
             </el-button>
           </div>
         </div>
@@ -17,7 +17,7 @@
         <div class="toolbar">
           <el-input
             v-model="searchForm.name"
-            placeholder="按名称搜索我的知识库"
+            placeholder="按名称搜索我的人设卡"
             clearable
             class="toolbar-input"
             @keyup.enter="handleSearch"
@@ -36,22 +36,22 @@
 
         <div v-loading="loading">
           <div
-            v-for="kb in sortedKnowledgeList"
-            :key="kb.id"
+            v-for="pc in sortedPersonaList"
+            :key="pc.id"
             class="repo-item"
-            @click="openDetail(kb)"
+            @click="openDetail(pc)"
           >
             <div class="repo-main">
               <div class="repo-title-row">
-                <span class="repo-name">{{ kb.name }}</span>
+                <span class="repo-name">{{ pc.name }}</span>
                 <span
-                  v-if="kb.is_public && !kb.is_pending"
+                  v-if="pc.is_public && !pc.is_pending"
                   class="repo-visibility"
                 >
                   公开
                 </span>
                 <span
-                  v-else-if="!kb.is_public && kb.is_pending"
+                  v-else-if="!pc.is_public && pc.is_pending"
                   class="repo-status pending"
                 >
                   公开审核中
@@ -63,13 +63,13 @@
                   私有
                 </span>
               </div>
-              <p v-if="kb.description" class="repo-description">
-                {{ kb.description }}
+              <p v-if="pc.description" class="repo-description">
+                {{ pc.description }}
               </p>
               <div class="repo-meta">
-                <span v-if="kb.tags && kb.tags.length" class="repo-tags">
+                <span v-if="pc.tags && pc.tags.length" class="repo-tags">
                   <el-tag
-                    v-for="(tag, index) in kb.tags"
+                    v-for="(tag, index) in pc.tags"
                     :key="index"
                     size="small"
                     effect="plain"
@@ -78,7 +78,7 @@
                   </el-tag>
                 </span>
                 <span class="repo-updated">
-                  最近更新于 {{ formatDate(kb.updated_at || kb.created_at) }}
+                  最近更新于 {{ formatDate(pc.updated_at || pc.created_at) }}
                 </span>
               </div>
             </div>
@@ -88,25 +88,25 @@
                   <el-icon>
                     <Download />
                   </el-icon>
-                  {{ kb.downloads || 0 }}
+                  {{ pc.downloads || 0 }}
                 </span>
                 <span class="repo-stat">
                   <el-icon>
                     <Star />
                   </el-icon>
-                  {{ kb.star_count || 0 }}
+                  {{ pc.star_count || 0 }}
                 </span>
               </div>
               <div class="repo-action-buttons">
                 <el-tooltip
-                  v-if="!kb.is_public && !kb.is_pending"
+                  v-if="!pc.is_public && !pc.is_pending"
                   content="编辑内容和文件"
                   placement="top"
                 >
                   <el-button
                     circle
                     text
-                    @click.stop="openEdit(kb)"
+                    @click.stop="openEdit(pc)"
                   >
                     <el-icon>
                       <Edit />
@@ -114,14 +114,14 @@
                   </el-button>
                 </el-tooltip>
                 <el-tooltip
-                  v-if="!kb.is_public && !kb.is_pending"
-                  content="申请公开到知识库广场（需审核）"
+                  v-if="!pc.is_public && !pc.is_pending"
+                  content="申请公开到人设卡广场（需审核）"
                   placement="top"
                 >
                   <el-button
                     circle
                     text
-                    @click.stop="requestPublish(kb)"
+                    @click.stop="requestPublish(pc)"
                   >
                     <el-icon>
                       <UploadFilled />
@@ -129,7 +129,7 @@
                   </el-button>
                 </el-tooltip>
                 <el-tooltip content="删除" placement="top">
-                  <el-button circle text type="danger" @click.stop="confirmDelete(kb)">
+                  <el-button circle text type="danger" @click.stop="confirmDelete(pc)">
                     <el-icon>
                       <Delete />
                     </el-icon>
@@ -139,10 +139,10 @@
             </div>
           </div>
           <div
-            v-if="!loading && sortedKnowledgeList.length === 0"
+            v-if="!loading && sortedPersonaList.length === 0"
             class="empty-tip"
           >
-            暂无知识库，点击右上角「上传新的知识库」开始创建。
+            暂无人设卡，点击右上角「创建新的人设卡」开始创建。
           </div>
         </div>
 
@@ -162,12 +162,12 @@
 
     <el-dialog
       v-model="editDialogVisible"
-      :title="editingKB ? `编辑知识库 - ${editingKB.name}` : '编辑知识库'"
+      :title="editingPersona ? `编辑人设卡 - ${editingPersona.name}` : '编辑人设卡'"
       width="720px"
       destroy-on-close
     >
       <el-form label-width="100px" class="edit-form">
-        <el-form-item label="知识库简介">
+        <el-form-item label="人设卡描述">
           <el-input
             v-model="editForm.description"
             type="textarea"
@@ -204,6 +204,7 @@
           <input
             ref="fileInput"
             type="file"
+            accept=".toml"
             multiple
             style="display: none"
             @change="handleFileChange"
@@ -246,7 +247,7 @@
               type="primary"
               text
               size="small"
-              @click="downloadKBFile(scope.row)"
+              @click="downloadEditFile(scope.row)"
             >
               下载
             </el-button>
@@ -254,7 +255,7 @@
               type="danger"
               text
               size="small"
-              @click="confirmDeleteFile(scope.row)"
+              @click="confirmDeleteEditFile(scope.row)"
             >
               删除
             </el-button>
@@ -276,39 +277,39 @@
 
     <el-drawer
       v-model="detailDrawerVisible"
-      :title="currentKB ? currentKB.name : '知识库详情'"
+      :title="currentPersona ? currentPersona.name : '人设卡详情'"
       direction="rtl"
       size="75%"
       :with-header="true"
       destroy-on-close
     >
-      <div v-if="currentKB" class="dialog-content">
+      <div v-if="currentPersona" class="dialog-content">
         <div class="basic-info">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="名称">
-              {{ currentKB.name || '-' }}
+              {{ currentPersona.name || '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="状态">
-              <span v-if="currentKB.is_public && !currentKB.is_pending">公开</span>
-              <span v-else-if="!currentKB.is_public && currentKB.is_pending">公开审核中</span>
+              <span v-if="currentPersona.is_public && !currentPersona.is_pending">公开</span>
+              <span v-else-if="!currentPersona.is_public && currentPersona.is_pending">公开审核中</span>
               <span v-else>私有</span>
             </el-descriptions-item>
             <el-descriptions-item label="创建时间">
-              {{ formatDate(currentKB.created_at) || '-' }}
+              {{ formatDate(currentPersona.created_at) || '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="更新时间">
-              {{ formatDate(currentKB.updated_at) || '-' }}
+              {{ formatDate(currentPersona.updated_at) || '-' }}
             </el-descriptions-item>
             <el-descriptions-item label="下载量">
-              {{ currentKB.downloads || 0 }}
+              {{ currentPersona.downloads || 0 }}
             </el-descriptions-item>
             <el-descriptions-item label="收藏量">
-              {{ currentKB.star_count || 0 }}
+              {{ currentPersona.star_count || 0 }}
             </el-descriptions-item>
             <el-descriptions-item label="标签" :span="2">
-              <span v-if="currentKB.tags && currentKB.tags.length">
+              <span v-if="currentPersona.tags && currentPersona.tags.length">
                 <el-tag
-                  v-for="(tag, index) in currentKB.tags"
+                  v-for="(tag, index) in currentPersona.tags"
                   :key="index"
                   size="small"
                   style="margin-right: 5px"
@@ -319,7 +320,7 @@
               <span v-else>-</span>
             </el-descriptions-item>
             <el-descriptions-item label="描述" :span="2">
-              {{ currentKB.description || '-' }}
+              {{ currentPersona.description || '-' }}
             </el-descriptions-item>
           </el-descriptions>
         </div>
@@ -339,7 +340,7 @@
             </el-button>
           </div>
           <div v-if="!editingRemark" class="drawer-remark-content">
-            {{ currentKB.content || '-' }}
+            {{ currentPersona.content || '-' }}
           </div>
           <div v-else>
             <el-input
@@ -348,7 +349,7 @@
               :rows="4"
             />
             <div class="form-tip">
-              补充说明仅自己可见，不会在知识库广场等公共页面展示
+              补充说明仅自己可见，不会在人设卡广场等公共页面展示
             </div>
             <div class="drawer-remark-actions">
               <el-button
@@ -371,8 +372,8 @@
         <div class="download-all-section">
           <el-button
             type="primary"
-            :disabled="!currentKB.files || !currentKB.files.length"
-            @click="downloadAllFilesInKB"
+            :disabled="!currentPersona.files || !currentPersona.files.length"
+            @click="downloadAllFiles"
           >
             <el-icon>
               <Download />
@@ -383,7 +384,7 @@
 
         <div class="files-list-section">
           <h4>文件列表</h4>
-          <el-table :data="currentKB.files || []" style="width: 100%">
+          <el-table :data="currentPersona.files || []" style="width: 100%">
             <el-table-column label="文件名" width="auto">
               <template #default="scope">
                 {{ scope.row.original_name || '-' }}
@@ -396,7 +397,7 @@
             </el-table-column>
             <el-table-column label="操作" width="100" fixed="right">
               <template #default="scope">
-                <el-button type="primary" text @click="downloadDrawerFile(scope.row)">
+                <el-button type="primary" text @click="downloadFile(scope.row)">
                   <el-icon>
                     <Download />
                   </el-icon>
@@ -417,37 +418,35 @@ import { Star, Download, Delete, UploadFilled, Edit } from '@element-plus/icons-
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  getUserKnowledgeBase,
-  getKnowledgeBaseDetail,
-  updateKnowledgeBase,
-  deleteKnowledgeBase,
-  addFilesToKnowledgeBase,
-  deleteFileFromKnowledgeBase
-} from '@/api/knowledge'
+  getUserPersonaCards,
+  getPersonaCardDetail,
+  deletePersonaCard,
+  updatePersonaCard,
+  addFilesToPersonaCard,
+  deleteFileFromPersonaCard
+} from '@/api/persona'
 import { getCurrentUser } from '@/api/user'
 import { handleApiError } from '@/utils/api'
 
 const router = useRouter()
 
 const loading = ref(false)
-const knowledgeList = ref([])
+const personaList = ref([])
 const userId = ref('')
 const sortOption = ref('updated_desc')
 
 const editDialogVisible = ref(false)
-const editingKB = ref(null)
+const editingPersona = ref(null)
 const editForm = reactive({
-  name: '',
   description: '',
-  tags: [],
-  copyright_owner: ''
+  tags: []
 })
 const editTagInput = ref('')
 const fileList = ref([])
 const fileInput = ref(null)
 
 const detailDrawerVisible = ref(false)
-const currentKB = ref(null)
+const currentPersona = ref(null)
 const remarkContent = ref('')
 const editingRemark = ref(false)
 
@@ -475,7 +474,7 @@ const fetchUserInfo = async () => {
   }
 }
 
-const fetchKnowledge = async () => {
+const fetchPersona = async () => {
   if (!userId.value) {
     return
   }
@@ -488,23 +487,23 @@ const fetchKnowledge = async () => {
     if (searchForm.name) {
       params.name = searchForm.name
     }
-    const response = await getUserKnowledgeBase(userId.value, params)
+    const response = await getUserPersonaCards(userId.value, params)
     if (response.success) {
-      knowledgeList.value = response.data || response.items || []
+      personaList.value = response.data || response.items || []
       pagination.total = response.total || 0
     } else {
-      ElMessage.error(response.message || '获取我的知识库失败')
+      ElMessage.error(response.message || '获取我的人设卡失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取我的知识库失败')
+    const message = handleApiError(error, '获取我的人设卡失败')
     ElMessage.error(message)
   } finally {
     loading.value = false
   }
 }
 
-const sortedKnowledgeList = computed(() => {
-  const list = [...knowledgeList.value]
+const sortedPersonaList = computed(() => {
+  const list = [...personaList.value]
   switch (sortOption.value) {
     case 'updated_asc':
       return list.sort((a, b) => new Date(a.updated_at || a.created_at || 0) - new Date(b.updated_at || b.created_at || 0))
@@ -520,71 +519,32 @@ const sortedKnowledgeList = computed(() => {
 
 const handleSearch = () => {
   pagination.currentPage = 1
-  fetchKnowledge()
+  fetchPersona()
 }
 
 const resetSearch = () => {
   searchForm.name = ''
   pagination.currentPage = 1
-  fetchKnowledge()
+  fetchPersona()
 }
 
 const handleSizeChange = (size) => {
   pagination.pageSize = size
-  fetchKnowledge()
+  fetchPersona()
 }
 
 const handleCurrentChange = (page) => {
   pagination.currentPage = page
-  fetchKnowledge()
+  fetchPersona()
 }
 
-const confirmDelete = (row) => {
-  ElMessageBox.prompt(
-    `此操作将永久删除知识库「${row.name}」，请输入知识库名称以确认：`,
-    '删除确认',
-    {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning',
-      inputPlaceholder: `请输入：${row.name}`,
-      inputValidator: (value) => {
-        if (!value) {
-          return '请输入知识库名称'
-        }
-        if (value !== row.name) {
-          return '输入的名称与知识库名称不一致'
-        }
-        return true
-      }
-    }
-  )
-    .then(() => deleteKB(row))
-    .catch(() => {})
-}
-
-const deleteKB = async (row) => {
-  try {
-    const response = await deleteKnowledgeBase(row.id)
-    if (response.success) {
-      ElMessage.success(response.message || '删除成功')
-      fetchKnowledge()
-    } else {
-      ElMessage.error(response.message || '删除失败')
-    }
-  } catch (error) {
-    const message = handleApiError(error, '删除知识库失败')
-    ElMessage.error(message)
-  }
-}
-
-const requestPublish = async (kb) => {
+const requestPublish = async (pc) => {
   try {
     const message =
-      '申请公开后，知识库将在审核通过后公开展示。<br/><br/>' +
+      '申请公开后，人设卡将在审核通过后公开展示。<br/><br/>' +
       '一旦审核通过：<br/>' +
-      '- 无法将知识库再改回私有；<br/>' +
-      '- 无法继续编辑知识库的基本信息和文件（补充说明仍可编辑）。<br/><br/>' +
+      '- 无法将人设卡再改回私有；<br/>' +
+      '- 无法继续编辑人设卡的基本信息和文件（补充说明仍可编辑）。<br/><br/>' +
       '确定要申请公开吗？'
     await ElMessageBox.confirm(
       message,
@@ -600,14 +560,14 @@ const requestPublish = async (kb) => {
     return
   }
   try {
-    const response = await updateKnowledgeBase(kb.id, {
+    const response = await updatePersonaCard(pc.id, {
       is_pending: true
     })
-    if (response.success) {
+    if (response && response.success) {
       ElMessage.success(response.message || '已提交公开申请，等待审核')
-      fetchKnowledge()
+      fetchPersona()
     } else {
-      ElMessage.error(response.message || '提交公开申请失败')
+      ElMessage.error((response && response.message) || '提交公开申请失败')
     }
   } catch (error) {
     const message = handleApiError(error, '提交公开申请失败')
@@ -615,121 +575,93 @@ const requestPublish = async (kb) => {
   }
 }
 
-const openDetail = async (kb) => {
+const confirmDelete = (row) => {
+  ElMessageBox.prompt(
+    `此操作将永久删除人设卡「${row.name}」，请输入人设卡名称以确认：`,
+    '删除确认',
+    {
+      confirmButtonText: '删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+      inputPlaceholder: `请输入：${row.name}`,
+      inputValidator: (value) => {
+        if (!value) {
+          return '请输入人设卡名称'
+        }
+        if (value !== row.name) {
+          return '输入的名称与人设卡名称不一致'
+        }
+        return true
+      }
+    }
+  )
+    .then(() => deletePersona(row))
+    .catch(() => {})
+}
+
+const deletePersona = async (row) => {
   try {
-    const response = await getKnowledgeBaseDetail(kb.id)
+    const response = await deletePersonaCard(row.id)
+    if (response.success) {
+      ElMessage.success(response.message || '删除成功')
+      fetchPersona()
+    } else {
+      ElMessage.error(response.message || '删除失败')
+    }
+  } catch (error) {
+    const message = handleApiError(error, '删除人设卡失败')
+    ElMessage.error(message)
+  }
+}
+
+const openEdit = async (pc) => {
+  if (pc.is_public || pc.is_pending) {
+    ElMessage.warning('公开或审核中的人设卡不允许修改基本信息和文件（补充说明仍可编辑）')
+    return
+  }
+  try {
+    const response = await getPersonaCardDetail(pc.id)
     if (response && response.success) {
       const data = response.data || {}
-      currentKB.value = data
+      editingPersona.value = data
+      editForm.description = data.description || ''
+      editForm.tags = Array.isArray(data.tags) ? [...data.tags] : []
+      editTagInput.value = ''
+      fileList.value = data.files || []
+      editDialogVisible.value = true
+    } else {
+      ElMessage.error((response && response.message) || '获取人设卡详情失败')
+    }
+  } catch (error) {
+    const message = handleApiError(error, '获取人设卡详情失败')
+    ElMessage.error(message)
+  }
+}
+
+const openDetail = async (pc) => {
+  try {
+    const response = await getPersonaCardDetail(pc.id)
+    if (response && response.success) {
+      const data = response.data || {}
+      currentPersona.value = data
       remarkContent.value = data.content || ''
       editingRemark.value = false
       detailDrawerVisible.value = true
     } else {
-      ElMessage.error((response && response.message) || '获取知识库详情失败')
+      ElMessage.error((response && response.message) || '获取人设卡详情失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取知识库详情失败')
+    const message = handleApiError(error, '获取人设卡详情失败')
     ElMessage.error(message)
   }
 }
 
-const openEdit = async (kb) => {
-  if (kb.is_public || kb.is_pending) {
-    ElMessage.warning('公开或审核中的知识库不允许修改基本信息和文件（补充说明仍可编辑）')
+const downloadFile = async (file) => {
+  if (!currentPersona.value) {
     return
   }
   try {
-    const response = await getKnowledgeBaseDetail(kb.id)
-    if (response && response.success) {
-      const data = response.data || {}
-      editingKB.value = data
-      editForm.name = data.name || ''
-      editForm.description = data.description || ''
-      editForm.tags = Array.isArray(data.tags) ? [...data.tags] : []
-      editTagInput.value = ''
-      editForm.copyright_owner = data.copyright_owner || ''
-      fileList.value = data.files || []
-      editDialogVisible.value = true
-    } else {
-      ElMessage.error((response && response.message) || '获取知识库详情失败')
-    }
-  } catch (error) {
-    const message = handleApiError(error, '获取知识库详情失败')
-    ElMessage.error(message)
-  }
-}
-
-const saveBasicInfo = async () => {
-  if (!editingKB.value) {
-    return
-  }
-  try {
-    const payload = {
-      description: editForm.description,
-      tags: Array.isArray(editForm.tags) ? editForm.tags.join(',') : ''
-    }
-    const response = await updateKnowledgeBase(editingKB.value.id, payload)
-    if (response && response.success) {
-      ElMessage.success(response.message || '修改知识库成功')
-      editDialogVisible.value = false
-      fetchKnowledge()
-    } else {
-      ElMessage.error((response && response.message) || '修改知识库失败')
-    }
-  } catch (error) {
-    const message = handleApiError(error, '修改知识库失败')
-    ElMessage.error(message)
-  }
-}
-
-const saveRemark = async () => {
-  if (!currentKB.value) {
-    return
-  }
-  try {
-    const payload = {
-      content: remarkContent.value
-    }
-    const response = await updateKnowledgeBase(currentKB.value.id, payload)
-    if (response && response.success) {
-      ElMessage.success(response.message || '备注已保存')
-      currentKB.value.content = remarkContent.value
-      const target = knowledgeList.value.find((item) => item.id === currentKB.value.id)
-      if (target) {
-        target.content = remarkContent.value
-      }
-      editingRemark.value = false
-    } else {
-      ElMessage.error((response && response.message) || '保存备注失败')
-    }
-  } catch (error) {
-    const message = handleApiError(error, '保存备注失败')
-    ElMessage.error(message)
-  }
-}
-
-const startEditRemark = () => {
-  if (!currentKB.value) {
-    return
-  }
-  remarkContent.value = currentKB.value.content || ''
-  editingRemark.value = true
-}
-
-const cancelRemarkEdit = () => {
-  if (!currentKB.value) {
-    return
-  }
-  remarkContent.value = currentKB.value.content || ''
-  editingRemark.value = false
-}
-
-const downloadDrawerFile = async (file) => {
-  if (!currentKB.value) {
-    return
-  }
-  try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${currentKB.value.id}/file/${file.file_id}`
+    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/persona/${currentPersona.value.id}/file/${file.file_id}`
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -757,13 +689,13 @@ const downloadDrawerFile = async (file) => {
   }
 }
 
-const downloadAllFilesInKB = async () => {
-  if (!currentKB.value) {
+const downloadAllFiles = async () => {
+  if (!currentPersona.value) {
     return
   }
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${currentKB.value.id}/download`
-    const loading = ElMessage({
+    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/persona/${currentPersona.value.id}/download`
+    const loadingMessage = ElMessage({
       message: '正在准备下载文件...',
       type: 'info',
       duration: 0,
@@ -785,60 +717,68 @@ const downloadAllFilesInKB = async () => {
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${currentKB.value.name}.zip`
+    link.download = `${currentPersona.value.name}.zip`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    loading.close()
-    ElMessage.success('开始下载知识库文件压缩包')
+    loadingMessage.close()
+    ElMessage.success('开始下载人设卡文件压缩包')
   } catch (error) {
-    console.error('下载知识库文件压缩包错误:', error)
+    console.error('下载人设卡文件压缩包错误:', error)
     ElMessage.error('下载失败: ' + error.message)
   }
 }
 
-const addTagsFromInput = (source, inputValue) => {
-  if (!inputValue) {
+const formatFileSize = (size) => {
+  if (!size || size <= 0) {
+    return '0 B'
+  }
+  const kb = size / 1024
+  if (kb < 1024) {
+    return `${kb.toFixed(1)} KB`
+  }
+  const mb = kb / 1024
+  if (mb < 1024) {
+    return `${mb.toFixed(1)} MB`
+  }
+  const gb = mb / 1024
+  return `${gb.toFixed(1)} GB`
+}
+
+const MAX_PERSONA_FILES = 2
+const MAX_PERSONA_FILE_SIZE_MB = 100
+const MAX_PERSONA_FILE_SIZE_BYTES = MAX_PERSONA_FILE_SIZE_MB * 1024 * 1024
+
+const saveBasicInfo = async () => {
+  if (!editingPersona.value) {
     return
   }
-  const normalized = inputValue.replace(/，/g, ',')
-  const parts = normalized.split(',').map((item) => item.trim()).filter((item) => item)
-  if (!parts.length) {
-    return
-  }
-  parts.forEach((tag) => {
-    if (!source.includes(tag)) {
-      source.push(tag)
+  try {
+    const payload = {
+      description: editForm.description,
+      tags: Array.isArray(editForm.tags) ? editForm.tags.join(',') : ''
     }
-  })
-}
-
-const handleEditTagInputKeyup = (event) => {
-  if (event.key === ',' || event.key === '，') {
-    event.preventDefault()
-    addTagsFromInput(editForm.tags, editTagInput.value)
-    editTagInput.value = ''
-  }
-}
-
-const commitEditTagInput = () => {
-  if (!editTagInput.value) {
-    return
-  }
-  addTagsFromInput(editForm.tags, editTagInput.value)
-  editTagInput.value = ''
-}
-
-const removeEditTag = (tag) => {
-  const index = editForm.tags.indexOf(tag)
-  if (index !== -1) {
-    editForm.tags.splice(index, 1)
+    const response = await updatePersonaCard(editingPersona.value.id, payload)
+    if (response && response.success) {
+      ElMessage.success(response.message || '修改人设卡成功')
+      editDialogVisible.value = false
+      fetchPersona()
+    } else {
+      ElMessage.error((response && response.message) || '修改人设卡失败')
+    }
+  } catch (error) {
+    const message = handleApiError(error, '修改人设卡失败')
+    ElMessage.error(message)
   }
 }
 
 const triggerFileSelect = () => {
-  if (!editingKB.value) {
+  if (!editingPersona.value) {
+    return
+  }
+  if (fileList.value.length >= MAX_PERSONA_FILES) {
+    ElMessage.warning(`人设卡最多只能包含 ${MAX_PERSONA_FILES} 个 .toml 文件，如需替换请先删除现有文件`)
     return
   }
   if (fileInput.value) {
@@ -847,7 +787,7 @@ const triggerFileSelect = () => {
 }
 
 const handleFileChange = async (event) => {
-  if (!editingKB.value) {
+  if (!editingPersona.value) {
     return
   }
   const files = event.target.files
@@ -855,11 +795,38 @@ const handleFileChange = async (event) => {
     return
   }
   try {
-    const fileArray = Array.from(files)
-    const response = await addFilesToKnowledgeBase(editingKB.value.id, fileArray)
+    const existingCount = fileList.value.length
+    const selectedFiles = Array.from(files)
+    const validFiles = []
+    for (const file of selectedFiles) {
+      const lowerName = file.name.toLowerCase()
+      if (!lowerName.endsWith('.toml')) {
+        ElMessage.error(`不支持的文件类型: ${file.name}，仅支持 .toml 文件`)
+        continue
+      }
+      if (typeof file.size === 'number' && file.size > MAX_PERSONA_FILE_SIZE_BYTES) {
+        ElMessage.error(`文件过大: ${file.name}，单个文件不超过 ${MAX_PERSONA_FILE_SIZE_MB}MB`)
+        continue
+      }
+      validFiles.push(file)
+    }
+    if (!validFiles.length) {
+      ElMessage.error('请选择符合要求的 .toml 文件')
+      return
+    }
+    if (existingCount + validFiles.length > MAX_PERSONA_FILES) {
+      const availableSlots = Math.max(0, MAX_PERSONA_FILES - existingCount)
+      if (!availableSlots) {
+        ElMessage.warning(`人设卡最多只能包含 ${MAX_PERSONA_FILES} 个 .toml 文件`)
+        return
+      }
+      ElMessage.warning(`人设卡最多只能包含 ${MAX_PERSONA_FILES} 个 .toml 文件，已自动截取前 ${availableSlots} 个新文件`)
+      validFiles.splice(availableSlots)
+    }
+    const response = await addFilesToPersonaCard(editingPersona.value.id, validFiles)
     if (response && response.success) {
       ElMessage.success(response.message || '文件添加成功')
-      const detail = await getKnowledgeBaseDetail(editingKB.value.id)
+      const detail = await getPersonaCardDetail(editingPersona.value.id)
       if (detail && detail.success) {
         const data = detail.data || {}
         fileList.value = data.files || []
@@ -877,41 +844,41 @@ const handleFileChange = async (event) => {
   }
 }
 
-const confirmDeleteFile = (file) => {
-  if (!editingKB.value) {
+const confirmDeleteEditFile = (file) => {
+  if (!editingPersona.value) {
     return
   }
   const isLastFile = fileList.value.length <= 1
   const message = isLastFile
-    ? `确认删除文件「${file.original_name}」？删除最后一个文件将会自动删除整个知识库「${editingKB.value.name}」。`
+    ? `确认删除文件「${file.original_name}」？删除最后一个文件将会自动删除整个人设卡「${editingPersona.value.name}」。`
     : `确认删除文件「${file.original_name}」？`
   ElMessageBox.confirm(
     message,
-    '删除文件',
+    '删除确认',
     {
       confirmButtonText: '删除',
       cancelButtonText: '取消',
       type: 'warning'
     }
   )
-    .then(() => deleteFile(file))
+    .then(() => deleteEditFile(file))
     .catch(() => {})
 }
 
-const deleteFile = async (file) => {
-  if (!editingKB.value) {
+const deleteEditFile = async (file) => {
+  if (!editingPersona.value) {
     return
   }
   try {
-    const response = await deleteFileFromKnowledgeBase(editingKB.value.id, file.file_id)
+    const response = await deleteFileFromPersonaCard(editingPersona.value.id, file.id || file.file_id)
     if (response && response.success) {
-      const message = response.message || '文件删除成功'
+      const message = response.message || '删除文件成功'
       ElMessage.success(message)
-      if (message.includes('知识库已自动删除')) {
+      if (message.includes('人设卡已自动删除')) {
         editDialogVisible.value = false
-        fetchKnowledge()
+        fetchPersona()
       } else {
-        const detail = await getKnowledgeBaseDetail(editingKB.value.id)
+        const detail = await getPersonaCardDetail(editingPersona.value.id)
         if (detail && detail.success) {
           const data = detail.data || {}
           fileList.value = data.files || []
@@ -926,12 +893,12 @@ const deleteFile = async (file) => {
   }
 }
 
-const downloadKBFile = async (file) => {
-  if (!editingKB.value) {
+const downloadEditFile = async (file) => {
+  if (!editingPersona.value) {
     return
   }
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${editingKB.value.id}/file/${file.file_id}`
+    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/persona/${editingPersona.value.id}/file/${file.file_id}`
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -954,29 +921,13 @@ const downloadKBFile = async (file) => {
     window.URL.revokeObjectURL(url)
     ElMessage.success(`开始下载文件: ${file.original_name}`)
   } catch (error) {
-    console.error('下载单个文件错误:', error)
+    console.error('下载编辑文件错误:', error)
     ElMessage.error('下载失败: ' + error.message)
   }
 }
 
-const formatFileSize = (size) => {
-  if (!size || size <= 0) {
-    return '0 B'
-  }
-  const kb = size / 1024
-  if (kb < 1024) {
-    return `${kb.toFixed(1)} KB`
-  }
-  const mb = kb / 1024
-  if (mb < 1024) {
-    return `${mb.toFixed(1)} MB`
-  }
-  const gb = mb / 1024
-  return `${gb.toFixed(1)} GB`
-}
-
 const goToUpload = () => {
-  router.push('/knowledge-upload')
+  router.push('/persona-upload')
 }
 
 const formatDate = (value) => {
@@ -990,14 +941,56 @@ const formatDate = (value) => {
   return date.toLocaleString()
 }
 
+const saveRemark = async () => {
+  if (!currentPersona.value) {
+    return
+  }
+  try {
+    const payload = {
+      content: remarkContent.value
+    }
+    const response = await updatePersonaCard(currentPersona.value.id, payload)
+    if (response && response.success) {
+      ElMessage.success(response.message || '备注已保存')
+      currentPersona.value.content = remarkContent.value
+      const target = personaList.value.find((item) => item.id === currentPersona.value.id)
+      if (target) {
+        target.content = remarkContent.value
+      }
+      editingRemark.value = false
+    } else {
+      ElMessage.error((response && response.message) || '保存备注失败')
+    }
+  } catch (error) {
+    const message = handleApiError(error, '保存备注失败')
+    ElMessage.error(message)
+  }
+}
+
+const startEditRemark = () => {
+  if (!currentPersona.value) {
+    return
+  }
+  remarkContent.value = currentPersona.value.content || ''
+  editingRemark.value = true
+}
+
+const cancelRemarkEdit = () => {
+  if (!currentPersona.value) {
+    return
+  }
+  remarkContent.value = currentPersona.value.content || ''
+  editingRemark.value = false
+}
+
 onMounted(async () => {
   await fetchUserInfo()
-  await fetchKnowledge()
+  await fetchPersona()
 })
 </script>
 
 <style scoped>
-.my-knowledge-container {
+.my-persona-container {
   padding: 24px;
 }
 
@@ -1032,16 +1025,6 @@ onMounted(async () => {
   margin: 0;
   color: var(--muted-text-color);
   font-size: 13px;
-}
-
-.tags-editor {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.tag-input {
-  width: 260px;
 }
 
 .toolbar {
@@ -1116,6 +1099,11 @@ onMounted(async () => {
   color: var(--secondary-color);
 }
 
+.repo-status.rejected {
+  background-color: rgba(245, 108, 108, 0.12);
+  color: #f56c6c;
+}
+
 .repo-description {
   margin: 0 0 6px;
   color: var(--muted-text-color);
@@ -1187,23 +1175,6 @@ onMounted(async () => {
   justify-content: flex-end;
 }
 
-.files-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-.kb-name {
-  font-weight: 600;
-}
-
-.files-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
 .dialog-content {
   padding: 0;
 }
@@ -1245,6 +1216,23 @@ onMounted(async () => {
 .download-all-section {
   margin: 20px 0;
   text-align: center;
+}
+
+.files-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.kb-name {
+  font-weight: 600;
+}
+
+.files-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .files-list-section {
