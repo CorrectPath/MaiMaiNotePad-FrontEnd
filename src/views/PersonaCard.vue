@@ -852,6 +852,9 @@ onMounted(() => {
 
 .card-version-tag {
   padding: 0 6px;
+  background-color: var(--secondary-color);
+  color: #303133;
+  border-color: transparent;
 }
 
 .drawer-title-with-version {
@@ -867,6 +870,9 @@ onMounted(() => {
 
 .drawer-version-tag {
   padding: 0 6px;
+  background-color: var(--secondary-color);
+  color: #303133;
+  border-color: transparent;
 }
 
 .pc-avatar {
