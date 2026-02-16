@@ -95,7 +95,7 @@
               </div>
             </div>
             <div class="card-author">
-              {{ kb.author ? `作者: ${kb.author}` : '作者: 用户已注销' }}
+              {{ getAuthorDisplay(kb) }}
             </div>
             <div class="card-description">
               {{ kb.description }}
@@ -148,7 +148,7 @@
         <div class="basic-info">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="名称">{{ selectedKB.name || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="作者">{{ selectedKB.author ? selectedKB.author : '用户已注销' }}</el-descriptions-item>
+            <el-descriptions-item label="作者">{{ getAuthorName(selectedKB) }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ formatDate(selectedKB.created_at) }}</el-descriptions-item>
             <el-descriptions-item label="更新时间">{{ formatDate(selectedKB.updated_at) }}</el-descriptions-item>
             <el-descriptions-item label="下载量">{{ selectedKB.downloads || 0 }}</el-descriptions-item>
@@ -356,8 +356,11 @@ const showKBDetail = async (kb) => {
 // 下载单个文件
 const downloadFile = async (file) => {
   try {
-    // 使用正确的API端点下载单个文件
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${selectedKB.id}/file/${file.file_id}`
+    if (!selectedKB.value || !selectedKB.value.id) {
+      ElMessage.error('未找到要下载的知识库')
+      return
+    }
+    const downloadUrl = `${apiBase}/knowledge/${selectedKB.value.id}/file/${file.file_id}`
     
     // 使用fetch API获取文件
     const response = await fetch(downloadUrl, {
@@ -395,11 +398,13 @@ const downloadFile = async (file) => {
   }
 }
 
-// 下载全部文件
 const downloadAllFiles = async () => {
   try {
-    // 使用正确的API端点下载全部文件
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${selectedKB.id}/download`
+    if (!selectedKB.value || !selectedKB.value.id) {
+      ElMessage.error('未找到要下载的知识库')
+      return
+    }
+    const downloadUrl = `${apiBase}/knowledge/${selectedKB.value.id}/download`
     
     // 显示加载状态
     const loading = ElMessage({
@@ -409,7 +414,6 @@ const downloadAllFiles = async () => {
       showClose: true
     })
     
-    // 使用fetch API获取文件
     console.log('开始下载，URL:', downloadUrl)
     const response = await fetch(downloadUrl, {
       method: 'GET',
@@ -430,16 +434,23 @@ const downloadAllFiles = async () => {
       throw new Error(`下载失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
     }
     
-    // 将响应转换为blob对象
     const blob = await response.blob()
     console.log('下载成功，blob大小:', blob.size)
     console.log('blob类型:', blob.type)
     
-    // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${selectedKB.name}.zip`
+    const kb = selectedKB.value || {}
+    const kbName = kb.name || '未命名知识库'
+    const author = getAuthorName(kb) || '未知作者'
+    const updatedAt = kb.updated_at || kb.created_at
+    const date = updatedAt ? new Date(updatedAt) : new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    const ts = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+    const sanitize = (value) => String(value).replace(/[\\/:*?"<>|]/g, '_').trim()
+    const finalName = `知识库_${sanitize(kbName)}_${sanitize(author)}_${ts}`
+    link.download = `${finalName}.zip`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -455,6 +466,30 @@ const downloadAllFiles = async () => {
     console.error('下载知识库文件压缩包错误:', error)
     ElMessage.error('下载失败: ' + error.message)
   }
+}
+
+const getAuthorName = (item) => {
+  if (!item) {
+    return '用户已注销'
+  }
+  if (item.author) {
+    return item.author
+  }
+  if (item.uploader_name) {
+    return item.uploader_name
+  }
+  if (item.author_id) {
+    return item.author_id
+  }
+  if (item.uploader_id) {
+    return item.uploader_id
+  }
+  return '用户已注销'
+}
+
+const getAuthorDisplay = (item) => {
+  const name = getAuthorName(item)
+  return name ? `作者: ${name}` : '作者: 用户已注销'
 }
 
 // 格式化日期时间（含时间）

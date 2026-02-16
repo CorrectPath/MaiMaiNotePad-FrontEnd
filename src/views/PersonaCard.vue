@@ -64,26 +64,59 @@
             @click="showCardDetail(card)"
           >
             <div class="card-header">
-              <h3 class="card-name">{{ card.name }}</h3>
-              <el-button
-                :icon="card.isStarred ? StarFilled : Star"
-                type="text"
-                class="star-button"
-                @click.stop="toggleStar(card)"
-                :style="{ color: card.isStarred ? '#f90' : '#999' }"
-              ></el-button>
+              <div class="card-title">
+                <el-avatar
+                  :size="32"
+                  :src="resolveAuthorAvatar(card)"
+                  class="pc-avatar"
+                >
+                  <template #default>
+                    {{ getPCInitial(card.author || card.name) }}
+                  </template>
+                </el-avatar>
+                <h3 class="card-name">{{ card.name }}</h3>
+              </div>
+              <div class="card-stats">
+                <span class="stat-item">
+                  <el-icon>
+                    <Download />
+                  </el-icon>
+                  {{ card.downloads }}
+                </span>
+                <span
+                  class="stat-item stat-star"
+                  :class="{ 'stat-star-active': card.isStarred }"
+                  @click.stop="toggleStar(card)"
+                >
+                  <el-icon>
+                    <StarFilled v-if="card.isStarred" />
+                    <Star v-else />
+                  </el-icon>
+                  {{ card.star_count }}
+                </span>
+              </div>
             </div>
-            <div class="card-author">{{ card.author ? `作者: ${card.author}` : '作者: 用户已注销' }}</div>
-            <div class="card-description">{{ card.description }}</div>
-            <div class="card-stats">
-              <span class="stat-item">
-                <el-icon><Download /></el-icon>
-                {{ card.downloads }}
-              </span>
-              <span class="stat-item">
-                <el-icon><Star /></el-icon>
-                {{ card.star_count }}
-              </span>
+            <div class="card-author">
+              {{ getAuthorDisplay(card) }}
+            </div>
+            <div class="card-description">
+              {{ card.description }}
+            </div>
+            <div
+              v-if="card.tags && card.tags.length"
+              class="card-tags"
+            >
+              <el-tag
+                v-for="(tag, index) in card.tags"
+                :key="index"
+                size="small"
+                effect="plain"
+              >
+                {{ tag }}
+              </el-tag>
+            </div>
+            <div class="card-date">
+              {{ formatDateOnly(card.updated_at || card.created_at) }}
             </div>
           </el-card>
         </div>
@@ -117,7 +150,7 @@
         <div class="basic-info">
           <el-descriptions :column="2" border>
             <el-descriptions-item label="名称">{{ selectedCard.name || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="作者">{{ selectedCard.author ? selectedCard.author : '用户已注销' }}</el-descriptions-item>
+            <el-descriptions-item label="作者">{{ getAuthorName(selectedCard) }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ formatDate(selectedCard.created_at) }}</el-descriptions-item>
             <el-descriptions-item label="更新时间">{{ formatDate(selectedCard.updated_at) }}</el-descriptions-item>
             <el-descriptions-item label="下载量">{{ selectedCard.downloads || 0 }}</el-descriptions-item>
@@ -168,9 +201,11 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { Star, StarFilled, Download } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElAvatar, ElIcon } from 'element-plus'
 import { getPublicPersonaCards, starPersonaCard, unstarPersonaCard, getPersonaCardDetail, checkPersonaCardStarred } from '@/api/persona'
 import { handleApiError } from '@/utils/api'
+
+const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
 // 搜索表单
 const searchForm = reactive({
@@ -322,7 +357,11 @@ const showCardDetail = async (card) => {
 // 下载单个文件
 const downloadFile = async (file) => {
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/persona/${selectedCard.id}/file/${file.file_id}`
+    if (!selectedCard.value || !selectedCard.value.id) {
+      ElMessage.error('未找到要下载的人设卡')
+      return
+    }
+    const downloadUrl = `${apiBase}/persona/${selectedCard.value.id}/file/${file.file_id}`
     
     // 使用fetch API获取文件
     const response = await fetch(downloadUrl, {
@@ -359,10 +398,13 @@ const downloadFile = async (file) => {
   }
 }
 
-// 下载人设卡文件压缩包
 const downloadAllFiles = async () => {
   try {
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/persona/${selectedCard.id}/download`
+    if (!selectedCard.value || !selectedCard.value.id) {
+      ElMessage.error('未找到要下载的人设卡')
+      return
+    }
+    const downloadUrl = `${apiBase}/persona/${selectedCard.value.id}/download`
     
     // 显示加载状态
     const loading = ElMessage({
@@ -372,7 +414,6 @@ const downloadAllFiles = async () => {
       showClose: true
     })
     
-    // 使用fetch API获取文件
     console.log('开始下载，URL:', downloadUrl)
     const response = await fetch(downloadUrl, {
       method: 'GET',
@@ -393,16 +434,23 @@ const downloadAllFiles = async () => {
       throw new Error(`下载失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
     }
     
-    // 将响应转换为blob对象
     const blob = await response.blob()
     console.log('下载成功，blob大小:', blob.size)
     console.log('blob类型:', blob.type)
     
-    // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${selectedCard.name}.zip`
+    const card = selectedCard.value || {}
+    const cardName = card.name || '未命名人设卡'
+    const author = getAuthorName(card) || '未知作者'
+    const updatedAt = card.updated_at || card.created_at
+    const date = updatedAt ? new Date(updatedAt) : new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    const ts = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+    const sanitize = (value) => String(value).replace(/[\\/:*?"<>|]/g, '_').trim()
+    const finalName = `人设卡_${sanitize(cardName)}_${sanitize(author)}_${ts}`
+    link.download = `${finalName}.zip`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -420,11 +468,44 @@ const downloadAllFiles = async () => {
   }
 }
 
+const getAuthorName = (item) => {
+  if (!item) {
+    return '用户已注销'
+  }
+  if (item.author) {
+    return item.author
+  }
+  if (item.uploader_name) {
+    return item.uploader_name
+  }
+  if (item.author_id) {
+    return item.author_id
+  }
+  if (item.uploader_id) {
+    return item.uploader_id
+  }
+  return '用户已注销'
+}
+
+const getAuthorDisplay = (item) => {
+  const name = getAuthorName(item)
+  return name ? `作者: ${name}` : '作者: 用户已注销'
+}
+
 // 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleString()
+}
+
+const formatDateOnly = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  return date.toLocaleDateString()
 }
 
 // 格式化文件大小
@@ -439,6 +520,30 @@ const formatFileSize = (size) => {
   } else {
     return `${(size / (1024 * 1024)).toFixed(2)} MB`
   }
+}
+
+const getPCInitial = (name) => {
+  if (!name) {
+    return ''
+  }
+  const trimmed = String(name).trim()
+  if (!trimmed) {
+    return ''
+  }
+  return trimmed[0].toUpperCase()
+}
+
+const resolveAuthorAvatar = (card) => {
+  if (!card || !card.author_id) {
+    return ''
+  }
+  const base = apiBase || ''
+  const trimmedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  let url = `${trimmedBase}/users/${card.author_id}/avatar?size=64`
+  if (card.avatar_updated_at) {
+    url += `&t=${encodeURIComponent(card.avatar_updated_at)}`
+  }
+  return url
 }
 
 onMounted(() => {
@@ -559,9 +664,7 @@ onMounted(() => {
 .card-stats {
   display: flex;
   gap: 15px;
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
+  align-items: center;
 }
 
 .stat-item {
@@ -570,6 +673,41 @@ onMounted(() => {
   gap: 5px;
   color: var(--muted-text-color);
   font-size: 14px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pc-avatar {
+  flex-shrink: 0;
+}
+
+.card-tags {
+  margin-bottom: 6px;
+}
+
+.card-tags :deep(.el-tag) {
+  margin-right: 4px;
+}
+
+.card-date {
+  font-size: 12px;
+  color: var(--muted-text-color);
+}
+
+.stat-star {
+  cursor: pointer;
+}
+
+.stat-star :deep(.el-icon) {
+  color: var(--muted-text-color);
+}
+
+.stat-star-active :deep(.el-icon) {
+  color: #f90;
 }
 
 .pagination-section {
@@ -597,18 +735,6 @@ onMounted(() => {
 :deep(.el-drawer__headerbtn) {
   top: 20px;
   right: 20px;
-}
-
-/* 增大收藏按钮尺寸 */
-.star-button {
-  font-size: 24px !important;
-  padding: 4px !important;
-  color: var(--muted-text-color) !important;
-  transform: scale(1.2); /* 放大按钮 */
-}
-
-.star-button:hover {
-  color: var(--secondary-color) !important;
 }
 
 .dialog-content {
