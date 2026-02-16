@@ -165,19 +165,16 @@ const passwordRules = {
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
 const avatarUrl = computed(() => {
-  if (!userInfo.value || !userInfo.value.avatar_url) {
+  if (!userInfo.value || !userInfo.value.id) {
     return ''
-  }
-  const url = userInfo.value.avatar_url
-  if (typeof url !== 'string' || url.length === 0) {
-    return ''
-  }
-  if (url.startsWith('http://') || url.startsWith('https://')) {
-    return url
   }
   const base = apiBase || ''
-  const root = base.endsWith('/api') ? base.slice(0, -4) : base
-  return `${root}${url}`
+  const trimmedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  let url = `${trimmedBase}/users/${userInfo.value.id}/avatar?size=200`
+  if (userInfo.value.avatar_updated_at) {
+    url += `&t=${encodeURIComponent(userInfo.value.avatar_updated_at)}`
+  }
+  return url
 })
 
 const fetchUserInfo = async () => {

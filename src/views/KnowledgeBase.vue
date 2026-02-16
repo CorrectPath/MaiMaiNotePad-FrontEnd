@@ -4,61 +4,51 @@
       <!-- 搜索栏 -->
       <div class="search-section">
         <el-card shadow="hover" class="search-card">
-          <el-form :model="searchForm" class="search-form" label-width="100px">
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="名称">
-                  <el-input
-                    v-model="searchForm.name"
-                    placeholder="请输入知识库名称"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="作者">
-                  <el-input
-                    v-model="searchForm.uploader_id"
-                    placeholder="请输入作者ID"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="标签">
-                  <el-input
-                    v-model="searchForm.tag"
-                    placeholder="请输入标签"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="排序字段">
-                  <el-select v-model="searchForm.sort_by" placeholder="请选择排序字段" class="sort-select">
-                    <el-option label="创建时间" value="created_at"></el-option>
-                    <el-option label="更新时间" value="updated_at"></el-option>
-                    <el-option label="名称" value="name"></el-option>
-                    <el-option label="下载量" value="downloads"></el-option>
-                    <el-option label="收藏量" value="star_count"></el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="排序顺序">
-                  <el-select v-model="searchForm.sort_order" placeholder="请选择排序顺序" class="sort-select">
-                    <el-option label="升序" value="asc"></el-option>
-                    <el-option label="降序" value="desc"></el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8" class="search-buttons">
-                <el-form-item>
-                  <el-button-group>
-                    <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
-                    <el-button @click="resetSearch" class="reset-btn">重置</el-button>
-                  </el-button-group>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-form>
+          <div class="search-toolbar">
+            <el-input
+              v-model="searchForm.name"
+              placeholder="搜索知识库名称或描述"
+              clearable
+              class="search-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-input
+              v-model="searchForm.uploader_id"
+              placeholder="作者用户名或ID"
+              clearable
+              class="filter-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-input
+              v-model="searchForm.tag"
+              placeholder="标签"
+              clearable
+              class="filter-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-select
+              v-model="searchForm.sort_by"
+              class="sort-select"
+              @change="handleSearch"
+            >
+              <el-option label="创建时间" value="created_at" />
+              <el-option label="更新时间" value="updated_at" />
+              <el-option label="下载量" value="downloads" />
+              <el-option label="收藏量" value="star_count" />
+            </el-select>
+            <el-select
+              v-model="searchForm.sort_order"
+              class="sort-order-select"
+              @change="handleSearch"
+            >
+              <el-option label="降序" value="desc" />
+              <el-option label="升序" value="asc" />
+            </el-select>
+            <el-button type="primary" @click="handleSearch" class="search-btn">
+              搜索
+            </el-button>
+            <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+          </div>
         </el-card>
       </div>
 
@@ -73,7 +63,18 @@
             @click="showKBDetail(kb)"
           >
             <div class="card-header">
-              <h3 class="card-name">{{ kb.name }}</h3>
+              <div class="card-title">
+                <el-avatar
+                  :size="32"
+                  :src="resolveAuthorAvatar(kb)"
+                  class="kb-avatar"
+                >
+                  <template #default>
+                    {{ getKBInitial(kb.author || kb.name) }}
+                  </template>
+                </el-avatar>
+                <h3 class="card-name">{{ kb.name }}</h3>
+              </div>
               <div class="card-stats">
                 <span class="stat-item">
                   <el-icon>
@@ -198,10 +199,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { Star, StarFilled, Download } from '@element-plus/icons-vue'
-import { ElMessage, ElIcon } from 'element-plus'
+import { ElMessage, ElIcon, ElAvatar } from 'element-plus'
 import { getPublicKnowledgeBase, starKnowledgeBase, unstarKnowledgeBase, getKnowledgeBaseDetail, checkKnowledgeBaseStarred } from '@/api/knowledge'
 import { handleApiError } from '@/utils/api'
 
+const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
+
+// 搜索输入（GitHub 风格语法）
 // 搜索表单
 const searchForm = reactive({
   name: '',
@@ -484,6 +488,30 @@ const formatFileSize = (size) => {
   }
 }
 
+const getKBInitial = (name) => {
+  if (!name) {
+    return ''
+  }
+  const trimmed = String(name).trim()
+  if (!trimmed) {
+    return ''
+  }
+  return trimmed[0].toUpperCase()
+}
+
+const resolveAuthorAvatar = (kb) => {
+  if (!kb || !kb.author_id) {
+    return ''
+  }
+  const base = apiBase || ''
+  const trimmedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  let url = `${trimmedBase}/users/${kb.author_id}/avatar?size=64`
+  if (kb.avatar_updated_at) {
+    url += `&t=${encodeURIComponent(kb.avatar_updated_at)}`
+  }
+  return url
+}
+
 onMounted(() => {
   getKnowledgeBases()
 })
@@ -534,6 +562,30 @@ onMounted(() => {
   width: 100%;
 }
 
+.search-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-input {
+  width: 180px;
+}
+
+.sort-select {
+  width: 140px;
+}
+
+.sort-order-select {
+  width: 120px;
+}
+
 .knowledge-base-list-container {
   flex: 1;
   overflow-y: auto;
@@ -561,6 +613,16 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 10px;
+}
+
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-avatar {
+  flex-shrink: 0;
 }
 
 .card-name {

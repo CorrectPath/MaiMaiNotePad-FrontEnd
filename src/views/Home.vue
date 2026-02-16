@@ -257,16 +257,17 @@ const hasNextMessage = computed(() => {
   return currentMessageIndex.value >= 0 && currentMessageIndex.value < messages.value.length - 1
 })
 
-const resolveAvatarUrl = (avatarUrl) => {
-  if (!avatarUrl || typeof avatarUrl !== 'string') {
+const resolveAvatarUrl = (userData) => {
+  if (!userData || !userData.id) {
     return ''
   }
-  if (avatarUrl.startsWith('http://') || avatarUrl.startsWith('https://')) {
-    return avatarUrl
-  }
   const base = apiBase || ''
-  const root = base.endsWith('/api') ? base.slice(0, -4) : base
-  return `${root}${avatarUrl}`
+  const trimmedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  let url = `${trimmedBase}/users/${userData.id}/avatar?size=64`
+  if (userData.avatar_updated_at) {
+    url += `&t=${encodeURIComponent(userData.avatar_updated_at)}`
+  }
+  return url
 }
 
 const pageTitleMap = {
@@ -347,11 +348,11 @@ const getUserInfo = async () => {
     const response = await getCurrentUser()
     if (response && response.success) {
       const data = response.data || {}
-      userAvatar.value = resolveAvatarUrl(data.avatar_url || '')
+      userAvatar.value = resolveAvatarUrl(data)
       userRole.value = data.role || 'user'
     } else if (response && response.data) {
       const data = response.data
-      userAvatar.value = resolveAvatarUrl(data.avatar_url || '')
+      userAvatar.value = resolveAvatarUrl(data)
       userRole.value = data.role || 'user'
     } else {
       console.error('获取用户信息失败:', response && response.message)
