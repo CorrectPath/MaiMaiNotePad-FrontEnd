@@ -163,8 +163,101 @@ const fileList = ref([])
 const submitting = ref(false)
 const uploadTagInput = ref('')
 
-const handleFileChange = (file, files) => {
-  fileList.value = files
+const readFileAsText = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      resolve(reader.result || '')
+    }
+    reader.onerror = () => {
+      reject(new Error('文件读取失败'))
+    }
+    reader.readAsText(file)
+  })
+}
+
+const validateKnowledgeJsonStructure = (data) => {
+  if (!data || typeof data !== 'object') {
+    return 'JSON 根节点必须是对象'
+  }
+  if (!Array.isArray(data.docs)) {
+    return '缺少 docs 数组字段或类型不正确'
+  }
+  if (typeof data.avg_ent_chars !== 'number') {
+    return '缺少 avg_ent_chars 数值字段或类型不正确'
+  }
+  if (typeof data.avg_ent_words !== 'number') {
+    return '缺少 avg_ent_words 数值字段或类型不正确'
+  }
+  for (let i = 0; i < data.docs.length; i += 1) {
+    const doc = data.docs[i]
+    if (!doc || typeof doc !== 'object') {
+      return `docs[${i}] 必须是对象`
+    }
+    if (typeof doc.idx !== 'string') {
+      return `docs[${i}].idx 必须是字符串`
+    }
+    if (typeof doc.passage !== 'string') {
+      return `docs[${i}].passage 必须是字符串`
+    }
+    if (!Array.isArray(doc.extracted_entities)) {
+      return `docs[${i}].extracted_entities 必须是数组`
+    }
+    for (let j = 0; j < doc.extracted_entities.length; j += 1) {
+      if (typeof doc.extracted_entities[j] !== 'string') {
+        return `docs[${i}].extracted_entities[${j}] 必须是字符串`
+      }
+    }
+    if (!Array.isArray(doc.extracted_triples)) {
+      return `docs[${i}].extracted_triples 必须是数组`
+    }
+    for (let k = 0; k < doc.extracted_triples.length; k += 1) {
+      const triple = doc.extracted_triples[k]
+      if (!Array.isArray(triple) || triple.length !== 3) {
+        return `docs[${i}].extracted_triples[${k}] 必须是长度为 3 的数组`
+      }
+      if (typeof triple[0] !== 'string' || typeof triple[1] !== 'string' || typeof triple[2] !== 'string') {
+        return `docs[${i}].extracted_triples[${k}] 的每个元素必须是字符串`
+      }
+    }
+  }
+  return ''
+}
+
+const handleFileChange = async (file, files) => {
+  const validFiles = []
+  for (const item of files) {
+    const raw = item.raw || item
+    if (!raw || !raw.name) {
+      continue
+    }
+    const lowerName = raw.name.toLowerCase()
+    if (lowerName.endsWith('.json')) {
+      try {
+        const text = await readFileAsText(raw)
+        let parsed
+        try {
+          parsed = JSON.parse(text)
+        } catch (e) {
+          ElMessage.error(`JSON 文件解析失败: ${raw.name}`)
+          continue
+        }
+        const errorMessage = validateKnowledgeJsonStructure(parsed)
+        if (errorMessage) {
+          ElMessage.error(`JSON 文件结构不符合要求: ${raw.name}，${errorMessage}`)
+          continue
+        }
+      } catch (e) {
+        ElMessage.error(`读取文件失败: ${raw.name}`)
+        continue
+      }
+    }
+    validFiles.push(item)
+  }
+  if (validFiles.length === 0 && files.length > 0) {
+    ElMessage.error('所有选择的 JSON 文件均未通过结构校验，请检查后重新上传')
+  }
+  fileList.value = validFiles
 }
 
 const handleFileRemove = (file, files) => {
