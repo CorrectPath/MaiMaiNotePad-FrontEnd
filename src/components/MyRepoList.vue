@@ -9,6 +9,14 @@
       <div class="repo-main">
         <div class="repo-title-row">
           <span class="repo-name">{{ item.name }}</span>
+          <el-tag
+            v-if="item.version"
+            size="small"
+            type="info"
+            class="repo-version-tag"
+          >
+            v{{ item.version }}
+          </el-tag>
           <span
             v-if="item.is_public && !item.is_pending"
             class="repo-visibility"
@@ -185,6 +193,10 @@ const handleDeleteClick = (item) => {
   word-break: break-all;
 }
 
+.repo-version-tag {
+  padding: 0 6px;
+}
+
 .repo-visibility {
   font-size: 12px;
   padding: 0 6px;
@@ -261,4 +273,3 @@ const handleDeleteClick = (item) => {
   gap: 4px;
 }
 </style>
-

@@ -104,28 +104,30 @@
       </el-form>
 
       <div class="files-header">
-        <div class="kb-name">文件列表</div>
+        <div class="kb-name">
+          文件列表
+          <span
+            v-if="editingPersona && editingPersona.version"
+            class="kb-version-inline"
+          >
+            版本号 {{ editingPersona.version }}
+          </span>
+        </div>
         <div class="files-actions">
           <input
             ref="fileInput"
             type="file"
             accept=".toml"
-            multiple
             style="display: none"
             @change="handleFileChange"
           />
-          <el-button type="primary" link @click="triggerFileSelect">
-            <el-icon>
-              <UploadFilled />
-            </el-icon>
-            添加文件
-          </el-button>
         </div>
       </div>
 
       <FileListTable
         v-if="fileList.length"
         :items="fileList"
+        :delete-text="'替换配置'"
         @preview="previewEditFile"
         @download="downloadEditFile"
         @delete="confirmDeleteEditFile"
@@ -134,7 +136,7 @@
         v-else
         class="empty-tip"
       >
-        暂无文件，可以通过上方按钮添加文件。
+        暂无文件。
       </div>
 
       <template #footer>
@@ -251,7 +253,15 @@
         </div>
 
         <div class="files-list-section">
-          <h4>文件列表</h4>
+          <h4>
+            文件列表
+            <span
+              v-if="currentPersona && currentPersona.version"
+              class="kb-version-inline"
+            >
+              （版本号 {{ currentPersona.version }}）
+            </span>
+          </h4>
           <FileListTable
             :items="currentPersona.files || []"
             :show-delete="false"
@@ -286,8 +296,7 @@ import {
   getPersonaCardDetail,
   deletePersonaCard,
   updatePersonaCard,
-  addFilesToPersonaCard,
-  deleteFileFromPersonaCard
+  addFilesToPersonaCard
 } from '@/api/persona'
 import { getCurrentUser } from '@/api/user'
 import { handleApiError, formatFileSize, formatDate } from '@/utils/api'
@@ -691,7 +700,7 @@ const downloadAllFiles = async () => {
   }
 }
 
-const MAX_PERSONA_FILES = 2
+const MAX_PERSONA_FILES = 1
 const MAX_PERSONA_FILE_SIZE_MB = 100
 const MAX_PERSONA_FILE_SIZE_BYTES = MAX_PERSONA_FILE_SIZE_MB * 1024 * 1024
 
@@ -722,10 +731,6 @@ const triggerFileSelect = () => {
   if (!editingPersona.value) {
     return
   }
-  if (fileList.value.length >= MAX_PERSONA_FILES) {
-    ElMessage.warning(`人设卡最多只能包含 ${MAX_PERSONA_FILES} 个 .toml 文件，如需替换请先删除现有文件`)
-    return
-  }
   if (fileInput.value) {
     fileInput.value.click()
   }
@@ -740,7 +745,6 @@ const handleFileChange = async (event) => {
     return
   }
   try {
-    const existingCount = fileList.value.length
     const selectedFiles = Array.from(files)
     const validFiles = []
     for (const file of selectedFiles) {
@@ -759,16 +763,8 @@ const handleFileChange = async (event) => {
       ElMessage.error('请选择符合要求的 .toml 文件')
       return
     }
-    if (existingCount + validFiles.length > MAX_PERSONA_FILES) {
-      const availableSlots = Math.max(0, MAX_PERSONA_FILES - existingCount)
-      if (!availableSlots) {
-        ElMessage.warning(`人设卡最多只能包含 ${MAX_PERSONA_FILES} 个 .toml 文件`)
-        return
-      }
-      ElMessage.warning(`人设卡最多只能包含 ${MAX_PERSONA_FILES} 个 .toml 文件，已自动截取前 ${availableSlots} 个新文件`)
-      validFiles.splice(availableSlots)
-    }
-    const response = await addFilesToPersonaCard(editingPersona.value.id, validFiles)
+    const file = validFiles[0]
+    const response = await addFilesToPersonaCard(editingPersona.value.id, [file])
     if (response && response.success) {
       ElMessage.success(response.message || '文件添加成功')
       const detail = await getPersonaCardDetail(editingPersona.value.id)
@@ -789,53 +785,8 @@ const handleFileChange = async (event) => {
   }
 }
 
-const confirmDeleteEditFile = (file) => {
-  if (!editingPersona.value) {
-    return
-  }
-  const isLastFile = fileList.value.length <= 1
-  const message = isLastFile
-    ? `确认删除文件「${file.original_name}」？删除最后一个文件将会自动删除整个人设卡「${editingPersona.value.name}」。`
-    : `确认删除文件「${file.original_name}」？`
-  ElMessageBox.confirm(
-    message,
-    '删除确认',
-    {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  )
-    .then(() => deleteEditFile(file))
-    .catch(() => {})
-}
-
-const deleteEditFile = async (file) => {
-  if (!editingPersona.value) {
-    return
-  }
-  try {
-    const response = await deleteFileFromPersonaCard(editingPersona.value.id, file.id || file.file_id)
-    if (response && response.success) {
-      const message = response.message || '删除文件成功'
-      ElMessage.success(message)
-      if (message.includes('人设卡已自动删除')) {
-        editDialogVisible.value = false
-        fetchPersona()
-      } else {
-        const detail = await getPersonaCardDetail(editingPersona.value.id)
-        if (detail && detail.success) {
-          const data = detail.data || {}
-          fileList.value = data.files || []
-        }
-      }
-    } else {
-      ElMessage.error((response && response.message) || '删除文件失败')
-    }
-  } catch (error) {
-    const message = handleApiError(error, '删除文件失败')
-    ElMessage.error(message)
-  }
+const confirmDeleteEditFile = () => {
+  triggerFileSelect()
 }
 
 const downloadEditFile = async (file) => {
@@ -1024,6 +975,12 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.kb-version-inline {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--muted-text-color);
 }
 
 .files-list-section {

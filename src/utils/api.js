@@ -15,10 +15,34 @@ export const handleApiResponse = (response, successCallback, errorCallback) => {
 
 export const handleApiError = (error, defaultMessage = '请求失败') => {
   console.error('API Error:', error)
-  const message = error.response?.data?.message || 
-                 error.response?.data?.error?.message || 
-                 error.message || 
-                 defaultMessage
+  const response = error && error.response
+  const data = response && response.data
+
+  let message =
+    (data && data.message) ||
+    (data && data.error && data.error.message) ||
+    (data && data.detail) ||
+    error.message ||
+    defaultMessage
+
+  const status = response && response.status
+  const path = data && data.error && data.error.path
+  const requestId = data && data.error && data.error.request_id
+
+  const extra = []
+  if (status) {
+    extra.push(`状态码 ${status}`)
+  }
+  if (path) {
+    extra.push(`接口 ${path}`)
+  }
+  if (requestId) {
+    extra.push(`请求ID ${requestId}`)
+  }
+  if (extra.length) {
+    message = `${message}（${extra.join('，')}）`
+  }
+
   return message
 }
 

@@ -74,7 +74,18 @@
                     {{ getPCInitial(card.author || card.name) }}
                   </template>
                 </el-avatar>
-                <h3 class="card-name">{{ card.name }}</h3>
+                <div class="card-title-main">
+                  <h3 class="card-name">{{ card.name }}</h3>
+                  <el-tag
+                    v-if="card.version"
+                    size="small"
+                    type="info"
+                    effect="dark"
+                    class="card-version-tag"
+                  >
+                    v{{ card.version }}
+                  </el-tag>
+                </div>
               </div>
               <div class="card-stats">
                 <span class="stat-item">
@@ -139,12 +150,27 @@
     <!-- 详情抽屉 -->
     <el-drawer
       v-model="dialogVisible"
-      :title="selectedCard.name"
       direction="rtl"
       size="75%"
       :with-header="true"
       destroy-on-close
     >
+      <template #header>
+        <div class="drawer-title-with-version">
+          <span class="drawer-title-text">
+            {{ selectedCard?.name || '人设卡详情' }}
+          </span>
+          <el-tag
+            v-if="selectedCard && selectedCard.version"
+            size="small"
+            type="info"
+            effect="dark"
+            class="drawer-version-tag"
+          >
+            v{{ selectedCard.version }}
+          </el-tag>
+        </div>
+      </template>
       <div class="dialog-content">
         <!-- 基本信息 -->
         <div class="basic-info">
@@ -155,6 +181,9 @@
             <el-descriptions-item label="更新时间">{{ formatDate(selectedCard.updated_at) }}</el-descriptions-item>
             <el-descriptions-item label="下载量">{{ selectedCard.downloads || 0 }}</el-descriptions-item>
             <el-descriptions-item label="收藏量">{{ selectedCard.star_count || 0 }}</el-descriptions-item>
+            <el-descriptions-item label="版本号">
+              {{ selectedCard.version || '-' }}
+            </el-descriptions-item>
             <el-descriptions-item label="标签" :span="2">
               <span v-if="selectedCard.tags && selectedCard.tags.length > 0">
                 <el-tag v-for="(tag, index) in selectedCard.tags" :key="index" size="small" style="margin-right: 5px;">{{ tag }}</el-tag>
@@ -175,7 +204,15 @@
 
         <!-- 文件列表 -->
         <div class="files-list-section">
-          <h4>文件列表</h4>
+          <h4>
+            文件列表
+            <span
+              v-if="selectedCard && selectedCard.version"
+              class="pc-version-inline"
+            >
+              （版本号 {{ selectedCard.version }}）
+            </span>
+          </h4>
           <el-table :data="selectedCard.files || []" style="width: 100%">
             <el-table-column label="文件名" width="auto">
               <template #default="scope">{{ scope.row.original_name || '-' }}</template>
@@ -187,6 +224,16 @@
               header-align="center"
             >
               <template #default="scope">{{ formatFileSize(scope.row.file_size) }}</template>
+            </el-table-column>
+            <el-table-column
+              label="修改时间"
+              width="180"
+              align="center"
+              header-align="center"
+            >
+              <template #default="scope">
+                {{ formatDate(scope.row.updated_at || scope.row.created_at) }}
+              </template>
             </el-table-column>
             <el-table-column
               label="操作"
@@ -797,6 +844,31 @@ onMounted(() => {
   gap: 8px;
 }
 
+.card-title-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-version-tag {
+  padding: 0 6px;
+}
+
+.drawer-title-with-version {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawer-title-text {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.drawer-version-tag {
+  padding: 0 6px;
+}
+
 .pc-avatar {
   flex-shrink: 0;
 }
@@ -873,5 +945,11 @@ onMounted(() => {
 .files-list-section h4 {
   margin-bottom: 10px;
   color: var(--secondary-color);
+}
+
+.pc-version-inline {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--muted-text-color);
 }
 </style>

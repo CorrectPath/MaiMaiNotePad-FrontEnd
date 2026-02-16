@@ -17,6 +17,17 @@
       </template>
     </el-table-column>
     <el-table-column
+      prop="updated_at"
+      label="修改时间"
+      min-width="180"
+      align="center"
+      header-align="center"
+    >
+      <template #default="scope">
+        {{ formatDate(scope.row.updated_at || scope.row.created_at) }}
+      </template>
+    </el-table-column>
+    <el-table-column
       label="操作"
       :width="actionColumnWidth"
       align="center"
@@ -56,15 +67,23 @@
             </el-icon>
           </el-button>
         </el-tooltip>
-        <el-button
+        <el-tooltip
           v-if="showDelete"
-          type="danger"
-          text
-          size="small"
-          @click="handleDelete(scope.row)"
+          :content="deleteText"
+          placement="top"
         >
-          {{ deleteText }}
-        </el-button>
+          <el-button
+            type="danger"
+            text
+            circle
+            size="small"
+            @click="handleDelete(scope.row)"
+          >
+            <el-icon>
+              <component :is="deleteIconComponent" />
+            </el-icon>
+          </el-button>
+        </el-tooltip>
       </template>
     </el-table-column>
   </el-table>
@@ -72,8 +91,8 @@
 
 <script setup>
 import { defineProps, defineEmits, computed } from 'vue'
-import { View, Download } from '@element-plus/icons-vue'
-import { formatFileSize } from '@/utils/api'
+import { View, Download, Delete, Switch } from '@element-plus/icons-vue'
+import { formatFileSize, formatDate } from '@/utils/api'
 
 const props = defineProps({
   items: {
@@ -101,6 +120,13 @@ const props = defineProps({
 const emit = defineEmits(['preview', 'download', 'delete'])
 
 const actionColumnWidth = computed(() => 140)
+
+const deleteIconComponent = computed(() => {
+  if (props.deleteText === '替换配置') {
+    return Switch
+  }
+  return Delete
+})
 
 const handlePreview = (row) => {
   emit('preview', row)
