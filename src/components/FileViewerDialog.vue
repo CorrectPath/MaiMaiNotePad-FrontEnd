@@ -120,7 +120,7 @@
                         v-model="docsFilterKeyword"
                         size="small"
                         class="json-filter-input"
-                        placeholder="输入关键字搜索块或注释"
+                        placeholder="输入关键字搜索"
                         clearable
                       />
                     </div>
@@ -729,7 +729,20 @@ const filteredTomlBlocks = computed(() => {
   return source.filter((item) => {
     const titleValue = String(item.title || '').toLowerCase()
     const descValue = String(item.description || '').toLowerCase()
-    return titleValue.includes(keyword) || descValue.includes(keyword)
+    if (titleValue.includes(keyword) || descValue.includes(keyword)) {
+      return true
+    }
+    const keyValues = Array.isArray(item.keyValues) ? item.keyValues : []
+    for (let i = 0; i < keyValues.length; i += 1) {
+      const kv = keyValues[i]
+      const keyText = String(kv.key || '').toLowerCase()
+      const valueText = String(kv.value || '').toLowerCase()
+      const commentText = String(kv.comment || '').toLowerCase()
+      if (keyText.includes(keyword) || valueText.includes(keyword) || commentText.includes(keyword)) {
+        return true
+      }
+    }
+    return false
   })
 })
 

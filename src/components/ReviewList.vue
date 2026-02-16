@@ -45,6 +45,13 @@
         >
           <el-button
             size="small"
+            plain
+            @click="handleView(item)"
+          >
+            查看详情
+          </el-button>
+          <el-button
+            size="small"
             type="primary"
             plain
             @click="handleApprove(item)"
@@ -96,7 +103,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['approve', 'reject'])
+const emit = defineEmits(['approve', 'reject', 'view'])
 
 const formatDate = (value) => {
   return formatDateUtil(value) || ''
@@ -107,6 +114,10 @@ const resolveAuthor = (item) => {
 }
 
 const canReview = computed(() => props.canReview)
+
+const handleView = (item) => {
+  emit('view', item)
+}
 
 const handleApprove = (item) => {
   emit('approve', item)
@@ -214,4 +225,3 @@ const handleReject = (item) => {
   font-size: 14px;
 }
 </style>
-

@@ -54,6 +54,7 @@
           :loading="loading"
           :can-review="canReview"
           empty-text="暂无待审核的人设卡。"
+          @view="showCardDetail"
           @approve="handleApprove"
           @reject="handleReject"
         />
@@ -70,6 +71,140 @@
           />
         </div>
       </el-card>
+
+      <el-drawer
+        v-model="detailDialogVisible"
+        direction="rtl"
+        size="75%"
+        :with-header="true"
+        destroy-on-close
+      >
+        <template #header>
+          <div class="drawer-title-with-version">
+            <span class="drawer-title-text">
+              {{ selectedCard?.name || '人设卡详情' }}
+            </span>
+            <el-tag
+              v-if="selectedCard && selectedCard.version"
+              size="small"
+              type="info"
+              effect="dark"
+              class="drawer-version-tag"
+            >
+              v{{ selectedCard.version }}
+            </el-tag>
+          </div>
+        </template>
+        <div class="dialog-content">
+          <div class="basic-info">
+            <el-descriptions :column="2" border>
+              <el-descriptions-item label="名称">{{ selectedCard.name || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="作者">{{ getAuthorName(selectedCard) }}</el-descriptions-item>
+              <el-descriptions-item label="创建时间">{{ formatDate(selectedCard.created_at) }}</el-descriptions-item>
+              <el-descriptions-item label="更新时间">{{ formatDate(selectedCard.updated_at) }}</el-descriptions-item>
+              <el-descriptions-item label="下载量">{{ selectedCard.downloads || 0 }}</el-descriptions-item>
+              <el-descriptions-item label="收藏量">{{ selectedCard.star_count || 0 }}</el-descriptions-item>
+              <el-descriptions-item label="版本号">
+                {{ selectedCard.version || '-' }}
+              </el-descriptions-item>
+              <el-descriptions-item label="标签" :span="2">
+                <span v-if="selectedCard.tags && selectedCard.tags.length > 0">
+                  <el-tag
+                    v-for="(tag, index) in selectedCard.tags"
+                    :key="index"
+                    size="small"
+                    style="margin-right: 5px;"
+                  >
+                    {{ tag }}
+                  </el-tag>
+                </span>
+                <span v-else>-</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="描述" :span="2">{{ selectedCard.description || '-' }}</el-descriptions-item>
+            </el-descriptions>
+          </div>
+
+          <div class="files-list-section">
+            <h4>
+              文件列表
+              <span
+                v-if="selectedCard && selectedCard.version"
+                class="pc-version-inline"
+              >
+                （版本号 {{ selectedCard.version }}）
+              </span>
+            </h4>
+            <el-table :data="selectedCard.files || []" style="width: 100%">
+              <el-table-column label="文件名" width="auto">
+                <template #default="scope">{{ scope.row.original_name || '-' }}</template>
+              </el-table-column>
+              <el-table-column
+                label="大小"
+                width="120"
+                align="center"
+                header-align="center"
+              >
+                <template #default="scope">{{ formatFileSize(scope.row.file_size) }}</template>
+              </el-table-column>
+              <el-table-column
+                label="修改时间"
+                width="180"
+                align="center"
+                header-align="center"
+              >
+                <template #default="scope">
+                  {{ formatDate(scope.row.updated_at || scope.row.created_at) }}
+                </template>
+              </el-table-column>
+              <el-table-column
+                label="操作"
+                width="140"
+                fixed="right"
+                align="center"
+                header-align="center"
+              >
+                <template #default="scope">
+                  <el-tooltip content="浏览文件" placement="top">
+                    <el-button
+                      type="primary"
+                      text
+                      circle
+                      size="small"
+                      @click="previewFile(scope.row)"
+                    >
+                      <el-icon>
+                        <View />
+                      </el-icon>
+                    </el-button>
+                  </el-tooltip>
+                  <el-tooltip content="下载文件" placement="top">
+                    <el-button
+                      type="primary"
+                      text
+                      circle
+                      size="small"
+                      @click="downloadFile(scope.row)"
+                    >
+                      <el-icon>
+                        <Download />
+                      </el-icon>
+                    </el-button>
+                  </el-tooltip>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+      </el-drawer>
+      <FileViewerDialog
+        v-model:visible="fileViewerVisible"
+        :title="fileViewerTitle"
+        :file-name="fileViewerFileName"
+        :content="fileViewerContent"
+        :language="fileViewerLanguage"
+        :loading="fileViewerLoading"
+        @download="downloadFromViewer"
+      />
     </div>
   </div>
 </template>
@@ -77,15 +212,29 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, Star } from '@element-plus/icons-vue'
+import { Download, View } from '@element-plus/icons-vue'
 import ReviewList from '@/components/ReviewList.vue'
-import { getPendingPersonaReview, approvePersonaCardReview, rejectPersonaCardReview } from '@/api/persona'
+import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import { getPendingPersonaReview, approvePersonaCardReview, rejectPersonaCardReview, getPersonaCardDetail } from '@/api/persona'
 import { getCurrentUser } from '@/api/user'
 import { handleApiError } from '@/utils/api'
+
+const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
 const loading = ref(false)
 const reviewList = ref([])
 const canReview = ref(false)
+
+const detailDialogVisible = ref(false)
+const selectedCard = ref({})
+
+const fileViewerVisible = ref(false)
+const fileViewerTitle = ref('')
+const fileViewerFileName = ref('')
+const fileViewerContent = ref('')
+const fileViewerLanguage = ref('')
+const fileViewerLoading = ref(false)
+const fileViewerFile = ref(null)
 
 const searchForm = reactive({
   name: '',
@@ -172,6 +321,24 @@ const handleCurrentChange = (page) => {
   fetchReviewList()
 }
 
+const showCardDetail = async (pc) => {
+  if (!pc || !pc.id) {
+    return
+  }
+  try {
+    const response = await getPersonaCardDetail(pc.id)
+    if (response && response.success) {
+      selectedCard.value = response.data || {}
+      detailDialogVisible.value = true
+    } else {
+      ElMessage.error((response && response.message) || '获取人设卡详情失败')
+    }
+  } catch (error) {
+    const message = handleApiError(error, '获取人设卡详情失败')
+    ElMessage.error(message)
+  }
+}
+
 const handleApprove = async (pc) => {
   if (!pc || !pc.id) {
     return
@@ -230,9 +397,162 @@ onMounted(async () => {
   await fetchCurrentUserRole()
   await fetchReviewList()
 })
+
+const getAuthorName = (item) => {
+  if (!item) {
+    return '用户已注销'
+  }
+  if (item.author) {
+    return item.author
+  }
+  if (item.uploader_name) {
+    return item.uploader_name
+  }
+  if (item.author_id) {
+    return item.author_id
+  }
+  if (item.uploader_id) {
+    return item.uploader_id
+  }
+  return '用户已注销'
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) {
+    return ''
+  }
+  const date = new Date(dateString)
+  return date.toLocaleString()
+}
+
+const formatFileSize = (size) => {
+  if (!size || isNaN(size)) {
+    return '0 B'
+  }
+  if (size < 1024) {
+    return `${size} B`
+  }
+  if (size < 1024 * 1024) {
+    return `${(size / 1024).toFixed(2)} KB`
+  }
+  return `${(size / (1024 * 1024)).toFixed(2)} MB`
+}
+
+const downloadFile = async (file) => {
+  if (!selectedCard.value || !selectedCard.value.id) {
+    ElMessage.error('未找到要下载的人设卡')
+    return
+  }
+  try {
+    const downloadUrl = `${apiBase}/persona/${selectedCard.value.id}/file/${file.file_id}`
+    const response = await fetch(downloadUrl, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`下载失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
+    }
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = file.original_name
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success(`开始下载文件: ${file.original_name}`)
+  } catch (error) {
+    ElMessage.error('下载失败: ' + error.message)
+  }
+}
+
+const resolveFileLanguage = (fileName) => {
+  const lower = (fileName || '').toLowerCase()
+  if (lower.endsWith('.toml')) {
+    return 'toml'
+  }
+  if (lower.endsWith('.json')) {
+    return 'json'
+  }
+  return 'txt'
+}
+
+const isPreviewableFile = (file) => {
+  const name = (file && file.original_name) || ''
+  const lower = name.toLowerCase()
+  return lower.endsWith('.toml') || lower.endsWith('.json') || lower.endsWith('.txt')
+}
+
+const previewFile = async (file) => {
+  if (!selectedCard.value || !selectedCard.value.id) {
+    ElMessage.error('未找到要预览的人设卡')
+    return
+  }
+  if (!isPreviewableFile(file)) {
+    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    return
+  }
+  const name = file.original_name || ''
+  fileViewerTitle.value = name || '文件预览'
+  fileViewerFileName.value = name
+  fileViewerLanguage.value = resolveFileLanguage(name)
+  fileViewerContent.value = ''
+  fileViewerVisible.value = true
+  fileViewerLoading.value = true
+  fileViewerFile.value = file
+  try {
+    const previewUrl = `${apiBase}/persona/${selectedCard.value.id}/file/${file.file_id}`
+    const response = await fetch(previewUrl, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`预览失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
+    }
+    const text = await response.text()
+    fileViewerContent.value = text
+  } catch (error) {
+    ElMessage.error('预览失败: ' + error.message)
+    fileViewerVisible.value = false
+  } finally {
+    fileViewerLoading.value = false
+  }
+}
+
+const downloadFromViewer = async () => {
+  if (!fileViewerFile.value) {
+    return
+  }
+  await downloadFile(fileViewerFile.value)
+}
 </script>
 
 <style scoped>
+.persona-review-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  height: 100%;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
 .filter-card {
   border-radius: 12px;
 }
@@ -256,5 +576,66 @@ onMounted(async () => {
   margin-top: 16px;
   display: flex;
   justify-content: flex-end;
+}
+
+:deep(.el-drawer) {
+  background-color: var(--card-background);
+  border-left: 1px solid var(--border-color);
+}
+
+:deep(.el-drawer__header) {
+  border-bottom: 1px solid var(--border-color);
+  padding: 20px;
+}
+
+:deep(.el-drawer__body) {
+  overflow-y: auto;
+  padding: 20px;
+}
+
+:deep(.el-drawer__headerbtn) {
+  top: 20px;
+  right: 20px;
+}
+
+.dialog-content {
+  padding: 0;
+}
+
+.basic-info {
+  margin-bottom: 20px;
+}
+
+.files-list-section {
+  margin-top: 20px;
+}
+
+.files-list-section h4 {
+  margin-bottom: 10px;
+  color: var(--secondary-color);
+}
+
+.drawer-title-with-version {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.drawer-title-text {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.drawer-version-tag {
+  padding: 0 6px;
+  background-color: var(--secondary-color);
+  color: #303133;
+  border-color: transparent;
+}
+
+.pc-version-inline {
+  margin-left: 8px;
+  font-size: 12px;
+  color: var(--muted-text-color);
 }
 </style>
