@@ -1,10 +1,5 @@
 <template>
-  <el-table
-    v-if="items && items.length"
-    :data="items"
-    size="small"
-    border
-  >
+  <el-table v-if="items && items.length" :data="items" size="small" border>
     <el-table-column
       prop="original_name"
       label="文件名"
@@ -14,6 +9,8 @@
       prop="file_size"
       label="大小"
       width="120"
+      align="center"
+      header-align="center"
     >
       <template #default="scope">
         {{ formatFileSize(scope.row.file_size) }}
@@ -22,16 +19,43 @@
     <el-table-column
       label="操作"
       :width="actionColumnWidth"
+      align="center"
+      header-align="center"
     >
       <template #default="scope">
-        <el-button
-          type="primary"
-          text
-          size="small"
-          @click="handleDownload(scope.row)"
+        <el-tooltip
+          v-if="showPreview"
+          content="浏览文件"
+          placement="top"
         >
-          {{ downloadText }}
-        </el-button>
+          <el-button
+            type="primary"
+            text
+            circle
+            size="small"
+            @click="handlePreview(scope.row)"
+          >
+            <el-icon>
+              <View />
+            </el-icon>
+          </el-button>
+        </el-tooltip>
+        <el-tooltip
+          content="下载文件"
+          placement="top"
+        >
+          <el-button
+            type="primary"
+            text
+            circle
+            size="small"
+            @click="handleDownload(scope.row)"
+          >
+            <el-icon>
+              <Download />
+            </el-icon>
+          </el-button>
+        </el-tooltip>
         <el-button
           v-if="showDelete"
           type="danger"
@@ -48,12 +72,17 @@
 
 <script setup>
 import { defineProps, defineEmits, computed } from 'vue'
+import { View, Download } from '@element-plus/icons-vue'
 import { formatFileSize } from '@/utils/api'
 
 const props = defineProps({
   items: {
     type: Array,
     default: () => []
+  },
+  showPreview: {
+    type: Boolean,
+    default: true
   },
   showDelete: {
     type: Boolean,
@@ -69,9 +98,13 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['download', 'delete'])
+const emit = defineEmits(['preview', 'download', 'delete'])
 
-const actionColumnWidth = computed(() => (props.showDelete ? 160 : 100))
+const actionColumnWidth = computed(() => 140)
+
+const handlePreview = (row) => {
+  emit('preview', row)
+}
 
 const handleDownload = (row) => {
   emit('download', row)
@@ -84,4 +117,3 @@ const handleDelete = (row) => {
 
 <style scoped>
 </style>
-

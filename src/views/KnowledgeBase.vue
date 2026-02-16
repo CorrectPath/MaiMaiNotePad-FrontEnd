@@ -178,28 +178,69 @@
             <el-table-column label="文件名" width="auto">
               <template #default="scope">{{ scope.row.original_name || '-' }}</template>
             </el-table-column>
-            <el-table-column label="大小" width="120">
+            <el-table-column
+              label="大小"
+              width="120"
+              align="center"
+              header-align="center"
+            >
               <template #default="scope">{{ formatFileSize(scope.row.file_size) }}</template>
             </el-table-column>
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column
+              label="操作"
+              width="140"
+              fixed="right"
+              align="center"
+              header-align="center"
+            >
               <template #default="scope">
-                <el-button type="primary" text @click="downloadFile(scope.row)">
-                  <el-icon><Download /></el-icon>
-                  下载
-                </el-button>
+                <el-tooltip content="浏览文件" placement="top">
+                  <el-button
+                    type="primary"
+                    text
+                    circle
+                    size="small"
+                    @click="previewFile(scope.row)"
+                  >
+                    <el-icon>
+                      <View />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="下载文件" placement="top">
+                  <el-button
+                    type="primary"
+                    text
+                    circle
+                    size="small"
+                    @click="downloadFile(scope.row)"
+                  >
+                    <el-icon><Download /></el-icon>
+                  </el-button>
+                </el-tooltip>
               </template>
             </el-table-column>
           </el-table>
         </div>
       </div>
     </el-drawer>
+    <FileViewerDialog
+      v-model:visible="fileViewerVisible"
+      :title="fileViewerTitle"
+      :file-name="fileViewerFileName"
+      :content="fileViewerContent"
+      :language="fileViewerLanguage"
+      :loading="fileViewerLoading"
+      @download="downloadFromViewer"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { Star, StarFilled, Download } from '@element-plus/icons-vue'
+import { Star, StarFilled, Download, View } from '@element-plus/icons-vue'
 import { ElMessage, ElIcon, ElAvatar } from 'element-plus'
+import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import { getPublicKnowledgeBase, starKnowledgeBase, unstarKnowledgeBase, getKnowledgeBaseDetail, checkKnowledgeBaseStarred } from '@/api/knowledge'
 import { handleApiError } from '@/utils/api'
 
@@ -228,6 +269,14 @@ const knowledgeBases = ref([])
 // 详情弹窗
 const dialogVisible = ref(false)
 const selectedKB = ref({})
+
+const fileViewerVisible = ref(false)
+const fileViewerTitle = ref('')
+const fileViewerFileName = ref('')
+const fileViewerContent = ref('')
+const fileViewerLanguage = ref('')
+const fileViewerLoading = ref(false)
+const fileViewerFile = ref(null)
 
 // 获取知识库列表
 const getKnowledgeBases = async () => {
@@ -396,6 +445,71 @@ const downloadFile = async (file) => {
     console.error('下载单个文件错误:', error)
     ElMessage.error('下载失败: ' + error.message)
   }
+}
+
+const resolveFileLanguage = (fileName) => {
+  const lower = (fileName || '').toLowerCase()
+  if (lower.endsWith('.toml')) {
+    return 'toml'
+  }
+  if (lower.endsWith('.json')) {
+    return 'json'
+  }
+  return 'txt'
+}
+
+const isPreviewableFile = (file) => {
+  const name = (file && file.original_name) || ''
+  const lower = name.toLowerCase()
+  return lower.endsWith('.toml') || lower.endsWith('.json') || lower.endsWith('.txt')
+}
+
+const previewFile = async (file) => {
+  if (!selectedKB.value || !selectedKB.value.id) {
+    ElMessage.error('未找到要预览的知识库')
+    return
+  }
+  if (!isPreviewableFile(file)) {
+    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    return
+  }
+  const name = file.original_name || ''
+  fileViewerTitle.value = name || '文件预览'
+  fileViewerFileName.value = name
+  fileViewerLanguage.value = resolveFileLanguage(name)
+  fileViewerContent.value = ''
+  fileViewerVisible.value = true
+  fileViewerLoading.value = true
+  fileViewerFile.value = file
+  try {
+    const previewUrl = `${apiBase}/knowledge/${selectedKB.value.id}/file/${file.file_id}`
+    const response = await fetch(previewUrl, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`预览失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
+    }
+    const text = await response.text()
+    fileViewerContent.value = text
+  } catch (error) {
+    console.error('预览文件错误:', error)
+    ElMessage.error('预览失败: ' + error.message)
+    fileViewerVisible.value = false
+  } finally {
+    fileViewerLoading.value = false
+  }
+}
+
+const downloadFromViewer = async () => {
+  if (!fileViewerFile.value) {
+    return
+  }
+  await downloadFile(fileViewerFile.value)
 }
 
 const downloadAllFiles = async () => {

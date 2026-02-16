@@ -40,7 +40,48 @@
 import { defineProps, defineEmits, computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-editor/min/vs/editor/editor.main.css'
+import 'monaco-editor/esm/vs/editor/contrib/folding/browser/folding'
 import { Download } from '@element-plus/icons-vue'
+
+let jsonFoldingProviderRegistered = false
+
+const ensureJsonFolding = () => {
+  if (jsonFoldingProviderRegistered) {
+    return
+  }
+  jsonFoldingProviderRegistered = true
+  try {
+    monaco.languages.register({ id: 'json' })
+  } catch (e) {}
+  monaco.languages.registerFoldingRangeProvider('json', {
+    provideFoldingRanges(model) {
+      const ranges = []
+      const stack = []
+      const lineCount = model.getLineCount()
+      for (let lineNumber = 1; lineNumber <= lineCount; lineNumber += 1) {
+        const text = model.getLineContent(lineNumber)
+        for (let i = 0; i < text.length; i += 1) {
+          const ch = text[i]
+          if (ch === '{' || ch === '[') {
+            stack.push({ start: lineNumber })
+          } else if (ch === '}' || ch === ']') {
+            if (stack.length) {
+              const last = stack.pop()
+              if (lineNumber > last.start) {
+                ranges.push({
+                  start: last.start,
+                  end: lineNumber,
+                  kind: monaco.languages.FoldingRangeKind.Region
+                })
+              }
+            }
+          }
+        }
+      }
+      return ranges
+    }
+  })
+}
 
 const props = defineProps({
   visible: {
@@ -151,6 +192,9 @@ const createEditor = () => {
     editorInstance.dispose()
     editorInstance = null
   }
+  if (monacoLanguage.value === 'json') {
+    ensureJsonFolding()
+  }
   monaco.editor.setTheme('vs-dark')
   editorInstance = monaco.editor.create(editorContainer.value, {
     value: previewSource.value,
@@ -159,7 +203,7 @@ const createEditor = () => {
     wordWrap: wrapEnabled.value ? 'on' : 'off',
     lineNumbers: 'on',
     glyphMargin: true,
-    foldingStrategy: 'indentation',
+    showFoldingControls: 'always',
     minimap: {
       enabled: false
     },

@@ -125,6 +125,7 @@
       <FileListTable
         v-if="fileList.length"
         :items="fileList"
+        @preview="previewKBFile"
         @download="downloadKBFile"
         @delete="confirmDeleteFile"
       />
@@ -253,11 +254,21 @@
           <FileListTable
             :items="currentKB.files || []"
             :show-delete="false"
+            @preview="previewDrawerFile"
             @download="downloadDrawerFile"
           />
         </div>
       </div>
     </el-drawer>
+    <FileViewerDialog
+      v-model:visible="fileViewerVisible"
+      :title="fileViewerTitle"
+      :file-name="fileViewerFileName"
+      :content="fileViewerContent"
+      :language="fileViewerLanguage"
+      :loading="fileViewerLoading"
+      @download="downloadFromViewer"
+    />
   </div>
 </template>
 
@@ -268,6 +279,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import MyRepoList from '@/components/MyRepoList.vue'
 import FileListTable from '@/components/FileListTable.vue'
+import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import {
   getUserKnowledgeBase,
   getKnowledgeBaseDetail,
@@ -304,6 +316,15 @@ const detailDrawerVisible = ref(false)
 const currentKB = ref(null)
 const remarkContent = ref('')
 const editingRemark = ref(false)
+
+const fileViewerVisible = ref(false)
+const fileViewerTitle = ref('')
+const fileViewerFileName = ref('')
+const fileViewerContent = ref('')
+const fileViewerLanguage = ref('')
+const fileViewerLoading = ref(false)
+const fileViewerKBId = ref(null)
+const fileViewerFile = ref(null)
 
 const searchForm = reactive({
   name: ''
@@ -578,12 +599,12 @@ const cancelRemarkEdit = () => {
   editingRemark.value = false
 }
 
-const downloadDrawerFile = async (file) => {
-  if (!currentKB.value) {
+const downloadKnowledgeFile = async (kbId, file) => {
+  if (!kbId || !file) {
     return
   }
   try {
-    const downloadUrl = `${apiBase}/knowledge/${currentKB.value.id}/file/${file.file_id}`
+    const downloadUrl = `${apiBase}/knowledge/${kbId}/file/${file.file_id}`
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -609,6 +630,92 @@ const downloadDrawerFile = async (file) => {
     console.error('下载单个文件错误:', error)
     ElMessage.error('下载失败: ' + error.message)
   }
+}
+
+const downloadDrawerFile = async (file) => {
+  if (!currentKB.value) {
+    return
+  }
+  await downloadKnowledgeFile(currentKB.value.id, file)
+}
+
+const resolveFileLanguage = (fileName) => {
+  const lower = (fileName || '').toLowerCase()
+  if (lower.endsWith('.toml')) {
+    return 'toml'
+  }
+  if (lower.endsWith('.json')) {
+    return 'json'
+  }
+  return 'txt'
+}
+
+const isPreviewableFile = (file) => {
+  const name = (file && file.original_name) || ''
+  const lower = name.toLowerCase()
+  return lower.endsWith('.toml') || lower.endsWith('.json') || lower.endsWith('.txt')
+}
+
+const openKnowledgeFileViewer = async (kbId, file) => {
+  if (!kbId || !file) {
+    return
+  }
+  if (!isPreviewableFile(file)) {
+    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    return
+  }
+  const name = file.original_name || ''
+  fileViewerTitle.value = name || '文件预览'
+  fileViewerFileName.value = name
+  fileViewerLanguage.value = resolveFileLanguage(name)
+  fileViewerContent.value = ''
+  fileViewerVisible.value = true
+  fileViewerLoading.value = true
+  fileViewerKBId.value = kbId
+  fileViewerFile.value = file
+  try {
+    const previewUrl = `${apiBase}/knowledge/${kbId}/file/${file.file_id}`
+    const response = await fetch(previewUrl, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`预览失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
+    }
+    const text = await response.text()
+    fileViewerContent.value = text
+  } catch (error) {
+    const message = handleApiError(error, '预览文件失败')
+    ElMessage.error(message)
+    fileViewerVisible.value = false
+  } finally {
+    fileViewerLoading.value = false
+  }
+}
+
+const previewKBFile = (file) => {
+  if (!editingKB.value) {
+    return
+  }
+  openKnowledgeFileViewer(editingKB.value.id, file)
+}
+
+const previewDrawerFile = (file) => {
+  if (!currentKB.value) {
+    return
+  }
+  openKnowledgeFileViewer(currentKB.value.id, file)
+}
+
+const downloadFromViewer = async () => {
+  if (!fileViewerKBId.value || !fileViewerFile.value) {
+    return
+  }
+  await downloadKnowledgeFile(fileViewerKBId.value, fileViewerFile.value)
 }
 
 const downloadAllFilesInKB = async () => {
