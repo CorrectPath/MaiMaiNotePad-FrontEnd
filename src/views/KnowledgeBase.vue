@@ -44,10 +44,18 @@
               <el-option label="降序" value="desc" />
               <el-option label="升序" value="asc" />
             </el-select>
-            <el-button type="primary" @click="handleSearch" class="search-btn">
-              搜索
-            </el-button>
-            <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+            <el-button-group class="search-btn-group">
+              <el-button
+                type="primary"
+                @click="handleSearch"
+                class="search-btn"
+              >
+                搜索
+              </el-button>
+              <el-button @click="resetSearch">
+                重置
+              </el-button>
+            </el-button-group>
           </div>
         </el-card>
       </div>
@@ -705,6 +713,10 @@ onMounted(() => {
 .search-btn {
   background-color: var(--secondary-color);
   border-color: var(--secondary-color);
+}
+
+.search-btn-group {
+  margin-left: 4px;
 }
 
 .sort-select {

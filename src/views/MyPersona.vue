@@ -159,6 +159,9 @@
             <el-descriptions-item label="名称">
               {{ currentPersona.name || '-' }}
             </el-descriptions-item>
+            <el-descriptions-item label="版本号">
+              {{ currentPersona.version || '-' }}
+            </el-descriptions-item>
             <el-descriptions-item label="状态">
               <span v-if="currentPersona.is_public && !currentPersona.is_pending">公开</span>
               <span v-else-if="!currentPersona.is_public && currentPersona.is_pending">公开审核中</span>
@@ -237,19 +240,6 @@
               </el-button>
             </div>
           </div>
-        </div>
-
-        <div class="download-all-section">
-          <el-button
-            type="primary"
-            :disabled="!currentPersona.files || !currentPersona.files.length"
-            @click="downloadAllFiles"
-          >
-            <el-icon>
-              <Download />
-            </el-icon>
-            打包下载全部文件
-          </el-button>
         </div>
 
         <div class="files-list-section">
@@ -657,47 +647,6 @@ const downloadFromViewer = async () => {
     return
   }
   await downloadPersonaFile(fileViewerPersonaId.value, fileViewerFile.value)
-}
-
-const downloadAllFiles = async () => {
-  if (!currentPersona.value) {
-    return
-  }
-  try {
-    const downloadUrl = `${apiBase}/persona/${currentPersona.value.id}/download`
-    const loadingMessage = ElMessage({
-      message: '正在准备下载文件...',
-      type: 'info',
-      duration: 0,
-      showClose: true
-    })
-    const response = await fetch(downloadUrl, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        Accept: 'application/zip'
-      }
-    })
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`下载失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
-    }
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `${currentPersona.value.name}.zip`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    loadingMessage.close()
-    ElMessage.success('开始下载人设卡文件压缩包')
-  } catch (error) {
-    console.error('下载人设卡文件压缩包错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
-  }
 }
 
 const MAX_PERSONA_FILES = 1

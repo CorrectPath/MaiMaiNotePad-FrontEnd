@@ -159,7 +159,7 @@ const rules = {
   ]
 }
 
-const MAX_PERSONA_FILES = 2
+const MAX_PERSONA_FILES = 1
 const MAX_PERSONA_FILE_SIZE_MB = 100
 const MAX_PERSONA_FILE_SIZE_BYTES = MAX_PERSONA_FILE_SIZE_MB * 1024 * 1024
 
@@ -189,10 +189,7 @@ const handleFileChange = (file, files) => {
     }
   }
   if (!validFiles.length && files.length) {
-    ElMessage.error('请选择 1-2 个符合要求的 .toml 文件')
-  }
-  if (files.length > MAX_PERSONA_FILES) {
-    ElMessage.warning(`人设卡最多只能上传 ${MAX_PERSONA_FILES} 个 .toml 文件，已自动截取前 ${MAX_PERSONA_FILES} 个`)
+    ElMessage.error('请选择 1 个符合要求的 .toml 文件，文件名必须为 bot_config.toml')
   }
   fileList.value = validFiles
 }
@@ -277,7 +274,7 @@ const handleSubmit = () => {
       return
     }
     if (!fileList.value.length) {
-      ElMessage.error('请至少选择一个文件')
+      ElMessage.error('请先选择一个 bot_config.toml 配置文件')
       return
     }
     submitting.value = true

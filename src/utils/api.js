@@ -26,6 +26,8 @@ export const handleApiError = (error, defaultMessage = '请求失败') => {
     defaultMessage
 
   const status = response && response.status
+  const details = data && data.error && data.error.details
+  const code = details && details.code
   const path = data && data.error && data.error.path
   const requestId = data && data.error && data.error.request_id
 
@@ -38,6 +40,9 @@ export const handleApiError = (error, defaultMessage = '请求失败') => {
   }
   if (requestId) {
     extra.push(`请求ID ${requestId}`)
+  }
+  if (code) {
+    extra.push(`错误码 ${code}`)
   }
   if (extra.length) {
     message = `${message}（${extra.join('，')}）`

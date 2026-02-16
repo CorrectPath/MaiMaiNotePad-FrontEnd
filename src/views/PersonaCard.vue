@@ -45,10 +45,18 @@
               <el-option label="降序" value="desc" />
               <el-option label="升序" value="asc" />
             </el-select>
-            <el-button type="primary" @click="handleSearch" class="search-btn">
-              搜索
-            </el-button>
-            <el-button @click="resetSearch" class="reset-btn">重置</el-button>
+            <el-button-group class="search-btn-group">
+              <el-button
+                type="primary"
+                @click="handleSearch"
+                class="search-btn"
+              >
+                搜索
+              </el-button>
+              <el-button @click="resetSearch">
+                重置
+              </el-button>
+            </el-button-group>
           </div>
         </el-card>
       </div>
@@ -126,8 +134,22 @@
                 {{ tag }}
               </el-tag>
             </div>
-            <div class="card-date">
-              {{ formatDateOnly(card.updated_at || card.created_at) }}
+            <div class="card-meta">
+              <span class="card-date">
+                {{ formatDateOnly(card.updated_at || card.created_at) }}
+              </span>
+              <span
+                v-if="card.files && card.files.length"
+                class="card-file-stat"
+              >
+                · {{ card.files.length }} 个文件
+              </span>
+              <span
+                v-if="typeof card.size === 'number'"
+                class="card-file-stat"
+              >
+                · 共 {{ formatFileSize(card.size) }}
+              </span>
             </div>
           </el-card>
         </div>
@@ -192,14 +214,6 @@
             </el-descriptions-item>
             <el-descriptions-item label="描述" :span="2">{{ selectedCard.description || '-' }}</el-descriptions-item>
           </el-descriptions>
-        </div>
-
-        <!-- 下载全部按钮 -->
-        <div class="download-all-section">
-          <el-button type="primary" @click="downloadAllFiles">
-            <Download :size="16" />
-            下载全部文件
-          </el-button>
         </div>
 
         <!-- 文件列表 -->
@@ -561,76 +575,6 @@ const downloadFromViewer = async () => {
   await downloadFile(fileViewerFile.value)
 }
 
-const downloadAllFiles = async () => {
-  try {
-    if (!selectedCard.value || !selectedCard.value.id) {
-      ElMessage.error('未找到要下载的人设卡')
-      return
-    }
-    const downloadUrl = `${apiBase}/persona/${selectedCard.value.id}/download`
-    
-    // 显示加载状态
-    const loading = ElMessage({
-      message: '正在准备下载文件...',
-      type: 'info',
-      duration: 0,
-      showClose: true
-    })
-    
-    console.log('开始下载，URL:', downloadUrl)
-    const response = await fetch(downloadUrl, {
-      method: 'GET',
-      credentials: 'include', // 包含认证信息
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}`, // 添加token
-        'Accept': 'application/zip' // 明确请求zip格式
-      }
-    })
-    
-    console.log('下载响应状态:', response.status)
-    console.log('响应头:', response.headers)
-    
-    if (!response.ok) {
-      // 获取错误响应的详细信息
-      const errorText = await response.text()
-      console.error('下载失败，响应文本:', errorText)
-      throw new Error(`下载失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
-    }
-    
-    const blob = await response.blob()
-    console.log('下载成功，blob大小:', blob.size)
-    console.log('blob类型:', blob.type)
-    
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    const card = selectedCard.value || {}
-    const cardName = card.name || '未命名人设卡'
-    const author = getAuthorName(card) || '未知作者'
-    const updatedAt = card.updated_at || card.created_at
-    const date = updatedAt ? new Date(updatedAt) : new Date()
-    const pad = (n) => String(n).padStart(2, '0')
-    const ts = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
-    const sanitize = (value) => String(value).replace(/[\\/:*?"<>|]/g, '_').trim()
-    const finalName = `人设卡_${sanitize(cardName)}_${sanitize(author)}_${ts}`
-    link.download = `${finalName}.zip`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    
-    // 释放URL对象
-    window.URL.revokeObjectURL(url)
-    
-    // 关闭加载提示
-    loading.close()
-    
-    ElMessage.success('开始下载人设卡文件压缩包')
-  } catch (error) {
-    console.error('下载人设卡文件压缩包错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
-  }
-}
-
 const getAuthorName = (item) => {
   if (!item) {
     return '用户已注销'
@@ -743,6 +687,10 @@ onMounted(() => {
 .search-btn {
   background-color: var(--secondary-color);
   border-color: var(--secondary-color);
+}
+
+.search-btn-group {
+  margin-left: 4px;
 }
 
 .search-toolbar {
@@ -887,9 +835,17 @@ onMounted(() => {
   margin-right: 4px;
 }
 
-.card-date {
+.card-meta {
   font-size: 12px;
   color: var(--muted-text-color);
+}
+
+.card-date {
+  margin-right: 4px;
+}
+
+.card-file-stat {
+  margin-left: 2px;
 }
 
 .stat-star {

@@ -4,7 +4,21 @@
       prop="original_name"
       label="文件名"
       min-width="260"
-    />
+    >
+      <template #default="scope">
+        <div class="file-name-cell">
+          <span class="file-name-main">
+            {{ scope.row.original_name || scope.row.file_name }}
+          </span>
+          <span
+            v-if="scope.row.file_type"
+            class="file-name-ext"
+          >
+            ({{ scope.row.file_type }})
+          </span>
+        </div>
+      </template>
+    </el-table-column>
     <el-table-column
       prop="file_size"
       label="大小"
@@ -142,4 +156,18 @@ const handleDelete = (row) => {
 </script>
 
 <style scoped>
+.file-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.file-name-main {
+  word-break: break-all;
+}
+
+.file-name-ext {
+  font-size: 12px;
+  color: #909399;
+}
 </style>
