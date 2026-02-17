@@ -84,33 +84,35 @@
               </template>
             </el-table-column>
             <el-table-column
-            prop="status"
-            label="状态"
-            Width="150"
-            align="center"
-            header-align="center"
-          >
-            <template #default="scope">
-              <template v-if="!scope.row.is_active">
-                <el-tag type="info">
-                  已删除
-                </el-tag>
+              prop="status"
+              label="状态"
+              Width="150"
+              align="center"
+              header-align="center"
+            >
+              <template #default="scope">
+                <template v-if="!scope.row.is_active">
+                  <el-tag type="info">
+                    已删除
+                  </el-tag>
+                </template>
+                <template v-else-if="isUserBanned(scope.row)">
+                  <div class="status-cell">
+                    <el-tag type="danger">
+                      封禁中
+                    </el-tag>
+                    <div v-if="scope.row.lockedUntil" class="status-extra">
+                      至 {{ formatDate(scope.row.lockedUntil) }}
+                    </div>
+                  </div>
+                </template>
+                <template v-else>
+                  <el-tag type="success">
+                    正常
+                  </el-tag>
+                </template>
               </template>
-              <template v-else-if="isUserBanned(scope.row)">
-                <el-tag type="danger">
-                  封禁中
-                </el-tag>
-                <span v-if="scope.row.lockedUntil" class="status-extra">
-                  至 {{ formatDate(scope.row.lockedUntil) }}
-                </span>
-              </template>
-              <template v-else>
-                <el-tag type="success">
-                  正常
-                </el-tag>
-              </template>
-            </template>
-          </el-table-column>
+            </el-table-column>
             <el-table-column
               prop="lastLoginAt"
               label="登录时间"
@@ -723,6 +725,12 @@ onMounted(() => {
   margin-top: 4px;
   font-size: 16px;
   font-weight: 600;
+}
+
+.status-cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .status-extra {

@@ -66,6 +66,23 @@
                     {{ userInfo && userInfo.id ? userInfo.id : '-' }}
                   </span>
                 </div>
+                <div class="info-row">
+                  <span class="info-label">当前角色</span>
+                  <span class="info-value">
+                    <template v-if="userInfo && userInfo.role === 'super_admin'">
+                      超级管理员
+                    </template>
+                    <template v-else-if="userInfo && userInfo.role === 'admin'">
+                      管理员
+                    </template>
+                    <template v-else-if="userInfo && userInfo.role === 'moderator'">
+                      审核员
+                    </template>
+                    <template v-else>
+                      普通用户
+                    </template>
+                  </span>
+                </div>
               </div>
             </div>
           </el-tab-pane>

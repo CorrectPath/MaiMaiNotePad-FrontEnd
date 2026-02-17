@@ -81,6 +81,9 @@
           <el-menu-item index="/admin-mute">
             <span class="menu-label">禁言管理</span>
           </el-menu-item>
+          <el-menu-item index="/admin-announcement">
+            <span class="menu-label">发布公告</span>
+          </el-menu-item>
         </el-sub-menu>
       </el-menu>
     </aside>
