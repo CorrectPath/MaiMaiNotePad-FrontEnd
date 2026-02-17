@@ -208,6 +208,7 @@
             <template #dropdown>
               <el-dropdown-menu>
                 <el-dropdown-item command="user-center">个人中心</el-dropdown-item>
+                <el-dropdown-item command="my-data">我的数据</el-dropdown-item>
                 <el-dropdown-item divided command="logout">登出</el-dropdown-item>
               </el-dropdown-menu>
             </template>
@@ -218,21 +219,89 @@
       <div class="content-wrapper">
         <router-view></router-view>
       </div>
+
+      <el-drawer
+        v-model="myDataVisible"
+        title="我的数据"
+        direction="rtl"
+        size="420px"
+        :with-header="true"
+        destroy-on-close
+      >
+        <div class="my-data-panel">
+          <div class="my-data-section">
+            <h3 class="my-data-section-title">下载与收藏概览</h3>
+            <div v-if="dashboardLoading" class="my-data-section-placeholder">
+              正在加载下载和收藏数据...
+            </div>
+            <div
+              v-else-if="dashboardStats"
+              class="my-data-summary-grid"
+            >
+              <div class="my-data-summary-item">
+                <div class="my-data-summary-label">知识库下载</div>
+                <div class="my-data-summary-value">
+                  {{ dashboardStats.knowledgeDownloads ?? 0 }}
+                </div>
+              </div>
+              <div class="my-data-summary-item">
+                <div class="my-data-summary-label">人设卡下载</div>
+                <div class="my-data-summary-value">
+                  {{ dashboardStats.personaDownloads ?? 0 }}
+                </div>
+              </div>
+              <div class="my-data-summary-item">
+                <div class="my-data-summary-label">知识库收藏</div>
+                <div class="my-data-summary-value">
+                  {{ dashboardStats.knowledgeStars ?? 0 }}
+                </div>
+              </div>
+              <div class="my-data-summary-item">
+                <div class="my-data-summary-label">人设卡收藏</div>
+                <div class="my-data-summary-value">
+                  {{ dashboardStats.personaStars ?? 0 }}
+                </div>
+              </div>
+            </div>
+            <div v-else class="my-data-section-placeholder">
+              暂无下载和收藏数据
+            </div>
+          </div>
+
+          <div class="my-data-section">
+            <h3 class="my-data-section-title">最近30天趋势</h3>
+            <div v-if="dashboardLoading" class="my-data-section-placeholder">
+              正在加载趋势数据...
+            </div>
+            <div
+              v-else-if="dashboardTrends && dashboardTrends.items && dashboardTrends.items.length"
+              class="my-data-chart-wrapper"
+            >
+              <div ref="trendChartRef" class="my-data-chart"></div>
+            </div>
+            <div v-else class="my-data-section-placeholder">
+              暂无趋势数据
+            </div>
+          </div>
+        </div>
+      </el-drawer>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
 import { UserFilled, Collection, Fold, Expand, Bell, RefreshRight, Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import * as echarts from 'echarts'
 import { handleApiError } from '@/utils/api'
 import websocket from '@/utils/websocket'
 import { useUserStore } from '@/stores/user'
 import { useMessageStore } from '@/stores/messages'
 import { useConnectionStore } from '@/stores/connection'
+import { getMyDashboardStats, getMyDashboardTrends } from '@/api/stats'
 
 const router = useRouter()
 const route = useRoute()
@@ -248,6 +317,12 @@ const isCollapsed = ref(false)
 const messagePopoverVisible = ref(false)
 const messageDialogVisible = ref(false)
 const selectedMessage = ref(null)
+const myDataVisible = ref(false)
+const dashboardLoading = ref(false)
+const dashboardStats = ref(null)
+const dashboardTrends = ref(null)
+const trendChartRef = ref(null)
+let trendChartInstance = null
 
 const userAvatar = computed(() => {
   return resolveAvatarUrl(user.value)
@@ -382,6 +457,8 @@ const toggleCollapse = () => {
 const handleUserCommand = (command) => {
   if (command === 'user-center') {
     router.push('/user-center')
+  } else if (command === 'my-data') {
+    myDataVisible.value = true
   } else if (command === 'logout') {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
@@ -404,6 +481,114 @@ onMounted(() => {
   }
 })
 
+const initMyDataCharts = async () => {
+  if (!myDataVisible.value) {
+    return
+  }
+  dashboardLoading.value = true
+  try {
+    const [dashboardResp, trendResp] = await Promise.all([
+      getMyDashboardStats(),
+      getMyDashboardTrends({ days: 30 })
+    ])
+
+    if (dashboardResp && dashboardResp.success && dashboardResp.data) {
+      dashboardStats.value = dashboardResp.data
+    } else if (dashboardResp && dashboardResp.data) {
+      dashboardStats.value = dashboardResp.data
+    } else if (dashboardResp) {
+      dashboardStats.value = dashboardResp
+    }
+
+    if (trendResp && trendResp.success && trendResp.data) {
+      dashboardTrends.value = trendResp.data
+    } else if (trendResp && trendResp.data) {
+      dashboardTrends.value = trendResp.data
+    } else if (trendResp) {
+      dashboardTrends.value = trendResp
+    }
+  } catch (error) {
+    const errorMessage = handleApiError(error, '获取下载、收藏数据失败，请稍后重试')
+    ElMessage.error(errorMessage)
+    dashboardStats.value = null
+    dashboardTrends.value = null
+  } finally {
+    dashboardLoading.value = false
+  }
+  await nextTick()
+  initTrendChart()
+}
+
+const initTrendChart = () => {
+  if (!trendChartRef.value || !dashboardTrends.value || !dashboardTrends.value.items) {
+    return
+  }
+
+  const el = trendChartRef.value
+  if (!trendChartInstance) {
+    trendChartInstance = echarts.init(el)
+  }
+
+  const items = dashboardTrends.value.items || []
+  const dates = items.map((item) => item.date)
+  const knowledgeDownloads = items.map((item) => item.knowledgeDownloads ?? 0)
+  const personaDownloads = items.map((item) => item.personaDownloads ?? 0)
+  const knowledgeStars = items.map((item) => item.knowledgeStars ?? 0)
+  const personaStars = items.map((item) => item.personaStars ?? 0)
+
+  const option = {
+    tooltip: {
+      trigger: 'axis'
+    },
+    legend: {
+      data: ['知识库下载', '人设卡下载', '知识库收藏', '人设卡收藏']
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: dates
+    },
+    yAxis: {
+      type: 'value',
+      minInterval: 1
+    },
+    series: [
+      {
+        name: '知识库下载',
+        type: 'line',
+        smooth: true,
+        data: knowledgeDownloads
+      },
+      {
+        name: '人设卡下载',
+        type: 'line',
+        smooth: true,
+        data: personaDownloads
+      },
+      {
+        name: '知识库收藏',
+        type: 'line',
+        smooth: true,
+        data: knowledgeStars
+      },
+      {
+        name: '人设卡收藏',
+        type: 'line',
+        smooth: true,
+        data: personaStars
+      }
+    ]
+  }
+
+  trendChartInstance.setOption(option, true)
+}
+
 onUnmounted(() => {
   if (messagePollTimer) {
     clearInterval(messagePollTimer)
@@ -418,6 +603,18 @@ watch(
   (visible) => {
     if (visible && messages.value.length === 0 && !messageStore.loading) {
       messageStore.fetchMessages()
+    }
+  }
+)
+
+watch(
+  myDataVisible,
+  (visible) => {
+    if (visible) {
+      initMyDataCharts()
+    } else if (trendChartInstance) {
+      trendChartInstance.dispose()
+      trendChartInstance = null
     }
   }
 )
@@ -782,5 +979,65 @@ watch(
   padding: 20px;
   overflow-y: auto;
   background-color: var(--primary-color);
+}
+
+.my-data-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.my-data-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.my-data-summary-item {
+  background-color: var(--card-background);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.my-data-summary-label {
+  font-size: 12px;
+  color: var(--muted-text-color);
+  margin-bottom: 4px;
+}
+
+.my-data-summary-value {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.my-data-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.my-data-section-title {
+  margin: 0;
+  font-size: 16px;
+}
+
+.my-data-chart-wrapper {
+  width: 100%;
+  height: 220px;
+}
+
+.my-data-chart {
+  width: 100%;
+  height: 100%;
+}
+
+.my-data-section-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  font-size: 13px;
+  color: var(--muted-text-color);
 }
 </style>
