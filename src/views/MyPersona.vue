@@ -847,7 +847,8 @@ onMounted(async () => {
 }
 
 .toolbar-input {
-  max-width: 260px;
+  flex: 1;
+  min-width: 220px;
 }
 
 .toolbar-sort {

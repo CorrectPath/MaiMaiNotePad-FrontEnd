@@ -1,6 +1,6 @@
 <template>
   <div class="knowledge-review-container">
-    <div class="layout-container">
+    <div class="layout-container page-layout-inner">
       <el-card class="filter-card" shadow="hover">
         <div class="filter-bar">
           <el-input

@@ -38,7 +38,7 @@
                 class="knowledge-base-item"
                 @click="showKBDetail(kb)"
               >
-                <div class="card-header-row">
+                <div class="card-header">
                   <div class="card-title">
                     <el-avatar
                       :size="32"
@@ -58,7 +58,7 @@
                       </el-icon>
                       {{ kb.downloads }}
                     </span>
-                    <span class="stat-item">
+                    <span class="stat-item stat-star">
                       <el-icon>
                         <StarFilled />
                       </el-icon>
@@ -626,6 +626,8 @@ onMounted(() => {
 }
 
 .list-card {
+  width: 100%;
+  box-sizing: border-box;
   border-radius: 12px;
 }
 
@@ -664,65 +666,82 @@ onMounted(() => {
 }
 
 .knowledge-base-list-container {
-  margin-top: 8px;
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
 }
 
 .knowledge-base-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 360px));
+  gap: 20px;
 }
 
 .knowledge-base-item {
   cursor: pointer;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--card-background);
+  border-color: var(--border-color);
+  position: relative;
 }
 
-.card-header-row {
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .card-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .kb-avatar {
-  background-color: var(--hover-color);
+  flex-shrink: 0;
 }
 
 .card-name {
   font-size: 16px;
+  font-weight: bold;
   margin: 0;
+  color: var(--secondary-color);
 }
 
 .card-stats {
   display: flex;
+  gap: 15px;
   align-items: center;
-  gap: 12px;
 }
 
 .stat-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 13px;
+  gap: 5px;
   color: var(--muted-text-color);
+  font-size: 14px;
 }
 
 .card-author {
-  margin-bottom: 4px;
-  font-size: 13px;
   color: var(--muted-text-color);
+  font-size: 14px;
+  margin-bottom: 10px;
 }
 
 .card-description {
-  font-size: 13px;
-  color: var(--primary-text-color);
-  margin-bottom: 6px;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  line-clamp: 3;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  color: var(--muted-text-color);
+  font-size: 14px;
+  margin-bottom: 10px;
 }
 
 .card-tags {

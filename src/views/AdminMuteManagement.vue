@@ -1,6 +1,6 @@
 <template>
   <div class="admin-mute-container">
-    <div class="layout-container">
+    <div class="layout-container page-layout-inner">
       <el-card class="filter-card" shadow="hover">
         <div class="filter-bar">
           <el-input
@@ -46,17 +46,16 @@
           <el-table-column
             prop="username"
             label="用户名"
-            min-width="140"
+            show-overflow-tooltip
           />
           <el-table-column
             prop="email"
             label="邮箱"
-            min-width="200"
+            show-overflow-tooltip
           />
           <el-table-column
             prop="role"
             label="角色"
-            min-width="140"
           />
           <el-table-column
             prop="isMuted"

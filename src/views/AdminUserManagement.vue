@@ -1,6 +1,6 @@
 <template>
   <div class="admin-user-container">
-    <div class="layout-container">
+    <div class="layout-container page-layout-inner">
       <el-card class="filter-card" shadow="hover">
         <div class="filter-bar">
           <el-input
@@ -43,27 +43,27 @@
           </div>
         </div>
 
-        <el-table
-          v-loading="loading"
-          :data="userList"
-          border
-          style="width: 100%"
-        >
-          <el-table-column
-            prop="username"
-            label="用户名"
-            min-width="140"
-          />
-          <el-table-column
-            prop="email"
-            label="邮箱"
-            min-width="200"
-          />
-          <el-table-column
-            prop="role"
-            label="角色"
-            min-width="160"
+        <div class="user-table-wrapper">
+          <el-table
+            v-loading="loading"
+            :data="userList"
+            border
+            style="width: 100%"
           >
+            <el-table-column
+              prop="username"
+              label="用户名"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="email"
+              label="邮箱"
+              show-overflow-tooltip
+            />
+            <el-table-column
+              prop="role"
+              label="角色"
+            >
             <template #default="scope">
               <el-select
                 v-model="scope.row.role"
@@ -76,10 +76,10 @@
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column
+            <el-table-column
             prop="status"
             label="状态"
-            min-width="150"
+            Width="150"
             align="center"
             header-align="center"
           >
@@ -104,54 +104,28 @@
               </template>
             </template>
           </el-table-column>
-          <el-table-column
-            prop="knowledgeCount"
-            label="知识库数量"
-            min-width="130"
-            align="center"
-            header-align="center"
-          />
-          <el-table-column
-            prop="personaCount"
-            label="人设卡数量"
-            min-width="130"
-            align="center"
-            header-align="center"
-          />
-          <el-table-column
-            prop="lastLoginAt"
-            label="最近登录时间"
-            min-width="180"
-          >
-            <template #default="scope">
-              {{ formatDate(scope.row.lastLoginAt) || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="lastUploadAt"
-            label="最近上传时间"
-            min-width="180"
-          >
-            <template #default="scope">
-              {{ formatDate(scope.row.lastUploadAt) || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            prop="createdAt"
-            label="注册时间"
-            min-width="180"
-          >
-            <template #default="scope">
-              {{ formatDate(scope.row.createdAt) }}
-            </template>
-          </el-table-column>
-          <el-table-column
-            label="操作"
-            min-width="220"
-            fixed="right"
-            align="center"
-            header-align="center"
-          >
+            <el-table-column
+              prop="lastLoginAt"
+              label="登录时间"
+            >
+              <template #default="scope">
+                {{ formatDate(scope.row.lastLoginAt) || '-' }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              prop="createdAt"
+              label="注册时间"
+            >
+              <template #default="scope">
+                {{ formatDate(scope.row.createdAt) }}
+              </template>
+            </el-table-column>
+            <el-table-column
+              label="操作"
+              fixed="right"
+              align="center"
+              header-align="center"
+            >
             <template #default="scope">
               <el-button
                 v-if="isUserBanned(scope.row)"
@@ -171,17 +145,10 @@
               >
                 封禁
               </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                text
-                @click="handleDeleteUser(scope.row)"
-              >
-                删除账号
-              </el-button>
             </template>
           </el-table-column>
-        </el-table>
+          </el-table>
+        </div>
 
         <div class="pagination-section">
           <el-pagination
@@ -629,6 +596,8 @@ onMounted(() => {
 .list-card {
   margin-top: 16px;
   border-radius: 12px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card-header {
@@ -673,6 +642,11 @@ onMounted(() => {
 .stats-label {
   font-size: 12px;
   color: var(--muted-text-color);
+}
+
+.user-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
 }
 
 .stats-value {

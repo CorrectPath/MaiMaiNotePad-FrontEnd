@@ -1089,6 +1089,7 @@ watch(
   flex: 1;
   padding: 20px;
   overflow-y: auto;
+  overflow-x: hidden;
   background-color: var(--primary-color);
 }
 
