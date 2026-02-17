@@ -19,24 +19,21 @@ export const handleApiError = (error, defaultMessage = '请求失败') => {
   const data = response && response.data
 
   let message =
-    (data && data.message) ||
     (data && data.error && data.error.message) ||
+    (data && data.message) ||
     (data && data.detail) ||
     error.message ||
     defaultMessage
 
   const status = response && response.status
-  const details = data && data.error && data.error.details
-  const code = details && details.code
-  const path = data && data.error && data.error.path
+  const errorInfo = data && data.error
+  const details = errorInfo && errorInfo.details
+  const code = (errorInfo && errorInfo.code) || (details && details.code)
   const requestId = data && data.error && data.error.request_id
 
   const extra = []
   if (status) {
     extra.push(`状态码 ${status}`)
-  }
-  if (path) {
-    extra.push(`接口 ${path}`)
   }
   if (requestId) {
     extra.push(`请求ID ${requestId}`)
@@ -45,7 +42,8 @@ export const handleApiError = (error, defaultMessage = '请求失败') => {
     extra.push(`错误码 ${code}`)
   }
   if (extra.length) {
-    message = `${message}（${extra.join('，')}）`
+    const debugLine = extra.join('，')
+    message = `${message}\n${debugLine}`
   }
 
   return message
