@@ -29,6 +29,18 @@ export const register = (username, password, email, verification_code) => {
   })
 }
 
+export const checkRegisterLegality = (username, email) => {
+  const params = new URLSearchParams()
+  params.append('username', username)
+  params.append('email', email)
+
+  return apiClient.post('/user/check_register', params, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  })
+}
+
 // 发送验证码
 export const sendVerificationCode = (email) => {
   const params = new URLSearchParams()
@@ -59,19 +71,42 @@ export const uploadAvatar = (avatar) => {
 
 // 修改密码
 export const changePassword = (current_password, new_password, confirm_password) => {
-  const params = new URLSearchParams()
-  params.append('current_password', current_password)
-  params.append('new_password', new_password)
-  params.append('confirm_password', confirm_password)
-  
-  return apiClient.put('/users/me/password', params, {
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded'
-    }
+  return apiClient.put('/users/me/password', {
+    current_password,
+    new_password,
+    confirm_password
   })
 }
 
 // 删除头像
 export const deleteAvatar = () => {
   return apiClient.delete('/users/me/avatar')
+}
+
+export const sendResetPasswordCode = (email) => {
+  const params = new URLSearchParams()
+  params.append('email', email)
+  return apiClient.post('/send_reset_password_code', params, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  })
+}
+
+export const resetPassword = (email, verification_code, new_password) => {
+  const params = new URLSearchParams()
+  params.append('email', email)
+  params.append('verification_code', verification_code)
+  params.append('new_password', new_password)
+  return apiClient.post('/reset_password', params, {
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  })
+}
+
+export const getUserStars = (params = {}) => {
+  return apiClient.get('/user/stars', {
+    params
+  })
 }

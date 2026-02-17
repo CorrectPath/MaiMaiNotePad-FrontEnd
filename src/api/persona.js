@@ -31,18 +31,8 @@ export const getUserPersonaCards = (user_id, params = {}) => {
 }
 
 // 更新人设卡
-export const updatePersonaCard = (pc_id, update_data) => {
-  const formData = new FormData()
-  Object.keys(update_data).forEach(key => {
-    if (update_data[key] !== undefined && update_data[key] !== null) {
-      formData.append(key, update_data[key])
-    }
-  })
-  return apiClient.put(`/persona/${pc_id}`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data'
-    }
-  })
+export const updatePersonaCard = (pc_id, payload) => {
+  return apiClient.put(`/persona/${pc_id}`, payload)
 }
 
 // Star人设卡
@@ -76,4 +66,19 @@ export const addFilesToPersonaCard = (pc_id, files) => {
 // 从人设卡删除文件
 export const deleteFileFromPersonaCard = (pc_id, file_id) => {
   return apiClient.delete(`/persona/${pc_id}/${file_id}`)
+}
+
+// 获取待审核人设卡列表
+export const getPendingPersonaReview = (params = {}) => {
+  return apiClient.get('/review/persona/pending', { params })
+}
+
+// 审核通过人设卡
+export const approvePersonaCardReview = (pc_id) => {
+  return apiClient.post(`/review/persona/${pc_id}/approve`)
+}
+
+// 审核拒绝人设卡
+export const rejectPersonaCardReview = (pc_id, reason) => {
+  return apiClient.post(`/review/persona/${pc_id}/reject`, { reason })
 }

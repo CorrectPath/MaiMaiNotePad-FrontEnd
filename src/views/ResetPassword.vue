@@ -1,44 +1,19 @@
 <template>
-  <div class="register-container">
-    <div class="register-form-wrapper">
+  <div class="reset-container">
+    <div class="reset-form-wrapper">
       <h2>麦麦笔记本</h2>
-      <h3>注册</h3>
+      <h3>重置密码</h3>
       <el-form
-        :model="registerForm"
-        :rules="registerRules"
-        ref="registerFormRef"
+        :model="resetForm"
+        :rules="resetRules"
+        ref="resetFormRef"
         label-position="left"
         label-width="90px"
       >
-        <el-form-item label="用户名" prop="username">
-          <el-input
-            v-model="registerForm.username"
-            placeholder="请输入用户名"
-            :prefix-icon="User"
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input
-            v-model="registerForm.password"
-            type="password"
-            placeholder="请输入密码"
-            :prefix-icon="Lock"
-            show-password
-          ></el-input>
-        </el-form-item>
-        <el-form-item label="确认密码" prop="confirm_password">
-          <el-input
-            v-model="registerForm.confirm_password"
-            type="password"
-            placeholder="请再次输入密码"
-            :prefix-icon="Lock"
-            show-password
-          ></el-input>
-        </el-form-item>
         <el-form-item label="邮箱" prop="email">
           <div class="email-input-wrapper">
             <el-input
-              v-model="registerForm.emailLocal"
+              v-model="resetForm.emailLocal"
               placeholder="请输入邮箱"
               :prefix-icon="Message"
               style="flex: 1"
@@ -49,14 +24,14 @@
         <el-form-item label="验证码" prop="verification_code">
           <div class="code-input-wrapper">
             <el-input
-              v-model="registerForm.verification_code"
+              v-model="resetForm.verification_code"
               placeholder="请输入验证码"
               :prefix-icon="CircleCheck"
               style="width: 65%"
             ></el-input>
             <el-button
               type="primary"
-              @click="sendVerificationCode"
+              @click="handleSendCode"
               :disabled="countdown > 0"
               style="width: 30%; margin-left: 5%"
             >
@@ -64,9 +39,27 @@
             </el-button>
           </div>
         </el-form-item>
+        <el-form-item label="新密码" prop="new_password">
+          <el-input
+            v-model="resetForm.new_password"
+            type="password"
+            placeholder="请输入新密码"
+            :prefix-icon="Lock"
+            show-password
+          ></el-input>
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirm_password">
+          <el-input
+            v-model="resetForm.confirm_password"
+            type="password"
+            placeholder="请再次输入新密码"
+            :prefix-icon="Lock"
+            show-password
+          ></el-input>
+        </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleRegister" class="register-btn">注册</el-button>
-          <el-link type="primary" @click="$router.push('/login')" class="login-link">去登录</el-link>
+          <el-button type="primary" @click="handleReset" class="reset-btn">重置密码</el-button>
+          <el-link type="primary" @click="$router.push('/login')" class="login-link">返回登录</el-link>
         </el-form-item>
       </el-form>
     </div>
@@ -76,54 +69,30 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { User, Lock, Message, CircleCheck } from '@element-plus/icons-vue'
+import { Message, CircleCheck, Lock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { register, sendVerificationCode as sendVerificationCodeApi, checkRegisterLegality } from '@/api/user'
+import { sendResetPasswordCode, resetPassword } from '@/api/user'
 import { handleApiError } from '@/utils/api'
 
 const router = useRouter()
-const registerFormRef = ref()
+const resetFormRef = ref()
 const countdown = ref(0)
 let countdownTimer = null
 
-const registerForm = reactive({
-  username: '',
-  password: '',
+const resetForm = reactive({
   email: '',
   emailLocal: '',
-  confirm_password: '',
-  verification_code: ''
+  verification_code: '',
+  new_password: '',
+  confirm_password: ''
 })
 
-const registerRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度在 3 到 20 个字符', trigger: 'blur' }
-  ],
-  password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, max: 30, message: '密码长度在 6 到 30 个字符', trigger: 'blur' }
-  ],
-  confirm_password: [
-    { required: true, message: '请再次输入密码', trigger: 'blur' },
-    {
-      validator: (rule, value, callback) => {
-        if (!value) {
-          callback(new Error('请再次输入密码'))
-        } else if (value !== registerForm.password) {
-          callback(new Error('两次输入的密码不一致'))
-        } else {
-          callback()
-        }
-      },
-      trigger: ['blur', 'change']
-    }
-  ],
+const resetRules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
-        const fullEmail = registerForm.emailLocal + '.com'
+        const fullEmail = resetForm.emailLocal + '.com'
         if (!fullEmail) {
           callback(new Error('请输入邮箱'))
         } else {
@@ -140,22 +109,35 @@ const registerRules = {
   ],
   verification_code: [
     { required: true, message: '请输入验证码', trigger: 'blur' }
+  ],
+  new_password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 30, message: '密码长度在 6 到 30 个字符', trigger: 'blur' }
+  ],
+  confirm_password: [
+    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (!value) {
+          callback(new Error('请再次输入新密码'))
+        } else if (value !== resetForm.new_password) {
+          callback(new Error('两次输入的密码不一致'))
+        } else {
+          callback()
+        }
+      },
+      trigger: ['blur', 'change']
+    }
   ]
 }
 
-const sendVerificationCode = async () => {
-  if (!registerForm.username) {
-    ElMessage.warning('请先输入用户名')
+const handleSendCode = async () => {
+  if (!resetForm.emailLocal) {
+    ElMessage.warning('请先输入邮箱')
     return
   }
 
-  if (!registerForm.emailLocal) {
-    ElMessage.warning('请先输入邮箱前缀')
-    return
-  }
-
-  const fullEmail = registerForm.emailLocal + '.com'
-
+  const fullEmail = resetForm.emailLocal + '.com'
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(fullEmail)) {
     ElMessage.warning('请输入有效的邮箱地址')
@@ -163,13 +145,9 @@ const sendVerificationCode = async () => {
   }
 
   try {
-    await checkRegisterLegality(registerForm.username, fullEmail)
-
-    const response = await sendVerificationCodeApi(fullEmail)
+    const response = await sendResetPasswordCode(fullEmail)
     if (response.success) {
       ElMessage.success('验证码发送成功')
-      
-      // 开始倒计时
       countdown.value = 60
       countdownTimer = setInterval(() => {
         countdown.value--
@@ -181,42 +159,30 @@ const sendVerificationCode = async () => {
       ElMessage.error(response.message || '验证码发送失败')
     }
   } catch (error) {
-    console.error('发送验证码错误:', error)
     const errorMessage = handleApiError(error, '验证码发送失败，请检查网络连接')
     ElMessage.error(errorMessage)
   }
 }
 
-const handleRegister = async () => {
-  if (!registerFormRef.value) return
-  await registerFormRef.value.validate(async (valid) => {
+const handleReset = async () => {
+  if (!resetFormRef.value) return
+  await resetFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        const fullEmail = registerForm.emailLocal + '.com'
-        const response = await register(
-          registerForm.username,
-          registerForm.password,
+        const fullEmail = resetForm.emailLocal + '.com'
+        const response = await resetPassword(
           fullEmail,
-          registerForm.verification_code
+          resetForm.verification_code,
+          resetForm.new_password
         )
-        
         if (response.success) {
-          ElMessage.success('注册成功')
-          
-          // 跳转到登录页，并自动填入注册信息
-          router.push({
-            path: '/login',
-            query: {
-              username: registerForm.username,
-              password: registerForm.password
-            }
-          })
+          ElMessage.success('密码重置成功，请使用新密码登录')
+          router.push('/login')
         } else {
-          ElMessage.error(response.message || '注册失败')
+          ElMessage.error(response.message || '密码重置失败')
         }
       } catch (error) {
-        console.error('注册错误:', error)
-        const errorMessage = handleApiError(error, '注册失败，请检查网络连接')
+        const errorMessage = handleApiError(error, '密码重置失败，请检查网络连接')
         ElMessage.error(errorMessage)
       }
     } else {
@@ -227,7 +193,7 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.register-container {
+.reset-container {
   width: 100%;
   height: 100vh;
   display: flex;
@@ -236,7 +202,7 @@ const handleRegister = async () => {
   background-color: var(--primary-color);
 }
 
-.register-form-wrapper {
+.reset-form-wrapper {
   width: 450px;
   padding: 40px;
   background-color: var(--card-background);
@@ -282,7 +248,7 @@ h3 {
   box-sizing: border-box;
 }
 
-.register-btn {
+.reset-btn {
   width: 100%;
   margin-bottom: 10px;
   background-color: var(--secondary-color);

@@ -31,7 +31,10 @@
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleLogin" class="login-btn">登录</el-button>
-          <el-link type="primary" @click="$router.push('/register')" class="register-link">去注册</el-link>
+          <div class="link-row">
+            <el-link type="primary" @click="$router.push('/register')" class="link-item">去注册</el-link>
+            <el-link type="primary" @click="$router.push('/reset-password')" class="link-item">忘记密码</el-link>
+          </div>
         </el-form-item>
       </el-form>
     </div>
@@ -42,7 +45,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { login } from '@/api/user'
 import { handleApiError } from '@/utils/api'
 
@@ -88,14 +91,12 @@ const handleLogin = async () => {
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // 发起登录请求
         const response = await login(loginForm.value.username, loginForm.value.password)
         
         if (response.success) {
-          // 保存访问令牌
           localStorage.setItem('access_token', response.data.access_token)
+          localStorage.setItem('refresh_token', response.data.refresh_token)
           
-          // 记住登录信息
           if (loginForm.value.remember) {
             localStorage.setItem('rememberedLogin', JSON.stringify(loginForm.value))
           } else {
@@ -109,8 +110,20 @@ const handleLogin = async () => {
         }
       } catch (error) {
         console.error('登录错误:', error)
-        const errorMessage = handleApiError(error, '登录失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        const response = error && error.response
+        const data = response && response.data
+        const rawMessage =
+          (data && data.message) ||
+          (data && data.error && data.error.message) ||
+          ''
+        if (rawMessage && rawMessage.includes('麦麦')) {
+          await ElMessageBox.alert(rawMessage, '通知', {
+            confirmButtonText: '知道了'
+          })
+        } else {
+          const errorMessage = handleApiError(error, '登录失败，请检查网络连接')
+          ElMessage.error(errorMessage)
+        }
       }
     } else {
       return false
@@ -163,8 +176,13 @@ h3 {
   border-color: var(--secondary-color);
 }
 
-.register-link {
-  display: block;
-  text-align: center;
+.link-row {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+}
+
+.link-item {
+  font-size: 14px;
 }
 </style>

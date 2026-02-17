@@ -12,9 +12,9 @@
 }
 
 body {
-  font-family: 'Arial', sans-serif;
-  background-color: #000;
-  color: #fff;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  background-color: var(--primary-color);
+  color: var(--text-color);
 }
 
 .app-container {

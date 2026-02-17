@@ -24,9 +24,12 @@
   "success": true,
   "message": "获取成功",
   "data": [],
-  "page": 1,
-  "page_size": 20,
-  "total": 100,
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total": 100,
+    "total_pages": 5
+  },
   "timestamp": "2024-01-01T12:00:00Z"
 }
 ```
@@ -264,9 +267,12 @@ Authorization: Bearer {token}
     "success": true,
     "message": "获取Star记录成功",
     "data": [],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -284,9 +290,12 @@ Authorization: Bearer {token}
     "success": true,
     "message": "获取上传历史成功",
     "data": [],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -399,9 +408,12 @@ Authorization: Bearer {token}
         "version": "1.0"
       }
     ],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -514,9 +526,12 @@ Authorization: Bearer {token}
         "version": "1.0"
       }
     ],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -761,9 +776,12 @@ Authorization: Bearer {token}
         "stars": 5
       }
     ],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -874,13 +892,16 @@ Authorization: Bearer {token}
         "size": 1024,
         "author": "上传者用户名",
         "author_id": "uploader_id",
-        "version": "1.0",
-        "stars": 5
+      "version": "1.0",
+      "stars": 5
       }
     ],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -1255,9 +1276,12 @@ Authorization: Bearer {token}
         "createdAt": "2024-01-01T12:00:00Z"
       }
     ],
-    "page": 1,
-    "page_size": 10,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 10,
+      "total": 100,
+      "total_pages": 10
+    }
   }
   ```
 
@@ -1288,9 +1312,12 @@ Authorization: Bearer {token}
         "personaCount": 3
       }
     ],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -1407,9 +1434,12 @@ Authorization: Bearer {token}
         "version": "1.0"
       }
     ],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -1462,9 +1492,12 @@ Authorization: Bearer {token}
         "stars": 5
       }
     ],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -1528,9 +1561,12 @@ Authorization: Bearer {token}
         "created_at": "2024-01-01T12:00:00Z"
       }
     ],
-    "page": 1,
-    "page_size": 20,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 20,
+      "total": 100,
+      "total_pages": 5
+    }
   }
   ```
 
@@ -1660,9 +1696,12 @@ Authorization: Bearer {token}
         "version": "1.0"
       }
     ],
-    "page": 1,
-    "page_size": 10,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 10,
+      "total": 100,
+      "total_pages": 10
+    }
   }
   ```
 
@@ -1714,9 +1753,12 @@ Authorization: Bearer {token}
         "stars": 0
       }
     ],
-    "page": 1,
-    "page_size": 10,
-    "total": 100
+    "pagination": {
+      "page": 1,
+      "page_size": 10,
+      "total": 100,
+      "total_pages": 10
+    }
   }
   ```
 

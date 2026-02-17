@@ -4,59 +4,59 @@
       <!-- 搜索栏 -->
       <div class="search-section">
         <el-card shadow="hover" class="search-card">
-          <el-form :model="searchForm" class="search-form" label-width="100px">
-            <el-row :gutter="20">
-              <el-col :span="8">
-                <el-form-item label="名称">
-                  <el-input
-                    v-model="searchForm.name"
-                    placeholder="请输入知识库名称"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="作者">
-                  <el-input
-                    v-model="searchForm.uploader_id"
-                    placeholder="请输入作者ID"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="标签">
-                  <el-input
-                    v-model="searchForm.tag"
-                    placeholder="请输入标签"
-                  ></el-input>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="排序字段">
-                  <el-select v-model="searchForm.sort_by" placeholder="请选择排序字段">
-                    <el-option label="创建时间" value="created_at"></el-option>
-                    <el-option label="更新时间" value="updated_at"></el-option>
-                    <el-option label="名称" value="name"></el-option>
-                    <el-option label="下载量" value="downloads"></el-option>
-                    <el-option label="收藏量" value="star_count"></el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8">
-                <el-form-item label="排序顺序">
-                  <el-select v-model="searchForm.sort_order" placeholder="请选择排序顺序">
-                    <el-option label="升序" value="asc"></el-option>
-                    <el-option label="降序" value="desc"></el-option>
-                  </el-select>
-                </el-form-item>
-              </el-col>
-              <el-col :span="8" class="search-buttons">
-                <el-form-item>
-                <el-button type="primary" @click="handleSearch" class="search-btn">搜索</el-button>
-                <el-button @click="resetSearch" class="reset-btn">重置</el-button>
-                </el-form-item>
-              </el-col>
-            </el-row>
-          </el-form>
+          <div class="search-toolbar">
+            <el-input
+              v-model="searchForm.name"
+              placeholder="搜索知识库名称或描述"
+              clearable
+              class="search-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-input
+              v-model="searchForm.uploader_id"
+              placeholder="作者用户名或ID"
+              clearable
+              class="filter-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-input
+              v-model="searchForm.tag"
+              placeholder="标签"
+              clearable
+              class="filter-input"
+              @keyup.enter="handleSearch"
+            />
+            <el-select
+              v-model="searchForm.sort_by"
+              class="sort-select"
+              @change="handleSearch"
+            >
+              <el-option label="创建时间" value="created_at" />
+              <el-option label="更新时间" value="updated_at" />
+              <el-option label="下载量" value="downloads" />
+              <el-option label="收藏量" value="star_count" />
+            </el-select>
+            <el-select
+              v-model="searchForm.sort_order"
+              class="sort-order-select"
+              @change="handleSearch"
+            >
+              <el-option label="降序" value="desc" />
+              <el-option label="升序" value="asc" />
+            </el-select>
+            <el-button-group class="search-btn-group">
+              <el-button
+                type="primary"
+                @click="handleSearch"
+                class="search-btn"
+              >
+                搜索
+              </el-button>
+              <el-button @click="resetSearch">
+                重置
+              </el-button>
+            </el-button-group>
+          </div>
         </el-card>
       </div>
 
@@ -71,25 +71,71 @@
             @click="showKBDetail(kb)"
           >
             <div class="card-header">
-              <h3 class="card-name">{{ kb.name }}</h3>
-              <el-button
-                :icon="kb.isStarred ? StarFilled : Star"
-                type="text"
-                class="star-button"
-                @click.stop="toggleStar(kb)"
-                :style="{ color: kb.isStarred ? '#f90' : '#999' }"
-              ></el-button>
+              <div class="card-title">
+                <el-avatar
+                  :size="32"
+                  :src="resolveAuthorAvatar(kb)"
+                  class="kb-avatar"
+                >
+                  <template #default>
+                    {{ getKBInitial(kb.author || kb.name) }}
+                  </template>
+                </el-avatar>
+                <h3 class="card-name">{{ kb.name }}</h3>
+              </div>
+              <div class="card-stats">
+                <span class="stat-item">
+                  <el-icon>
+                    <Download />
+                  </el-icon>
+                  {{ kb.downloads }}
+                </span>
+                <span
+                  class="stat-item stat-star"
+                  @click.stop="toggleStar(kb)"
+                >
+                  <el-icon>
+                    <StarFilled v-if="kb.isStarred" />
+                    <Star v-else />
+                  </el-icon>
+                  {{ kb.star_count }}
+                </span>
+              </div>
             </div>
-            <div class="card-author">{{ kb.author ? `作者: ${kb.author}` : '作者: 用户已注销' }}</div>
-            <div class="card-description">{{ kb.description }}</div>
-            <div class="card-stats">
-              <span class="stat-item">
-                <el-icon><Download /></el-icon>
-                {{ kb.downloads }}
+            <div class="card-author">
+              {{ getAuthorDisplay(kb) }}
+            </div>
+            <div class="card-description">
+              {{ kb.description }}
+            </div>
+            <div
+              v-if="kb.tags && kb.tags.length"
+              class="card-tags"
+            >
+              <el-tag
+                v-for="(tag, index) in kb.tags"
+                :key="index"
+                size="small"
+                effect="plain"
+              >
+                {{ tag }}
+              </el-tag>
+            </div>
+            <div class="card-meta">
+              <span class="card-date">
+                {{ formatDateOnly(kb.updated_at || kb.created_at) }}
               </span>
-              <span class="stat-item">
-                <el-icon><Star /></el-icon>
-                {{ kb.star_count }}
+              <span
+                v-if="kb.files && kb.files.length"
+                class="card-file-stat"
+              >
+                · {{ kb.files.length }} 个文件
+              </span>
+              <span
+                v-if="typeof kb.size === 'number'"
+                class="card-file-stat"
+              >
+                · 共 {{ formatFileSize(kb.size) }}
               </span>
             </div>
           </el-card>
@@ -113,9 +159,9 @@
     <!-- 详情抽屉 -->
     <el-drawer
       v-model="dialogVisible"
-      :title="selectedKB.name"
+      :title="safeSelectedKB.name || '知识库详情'"
       direction="rtl"
-      size="40%"
+      size="75%"
       :with-header="true"
       destroy-on-close
     >
@@ -123,19 +169,19 @@
         <!-- 基本信息 -->
         <div class="basic-info">
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="名称">{{ selectedKB.name || '-' }}</el-descriptions-item>
-            <el-descriptions-item label="作者">{{ selectedKB.author ? selectedKB.author : '用户已注销' }}</el-descriptions-item>
-            <el-descriptions-item label="创建时间">{{ formatDate(selectedKB.created_at) }}</el-descriptions-item>
-            <el-descriptions-item label="更新时间">{{ formatDate(selectedKB.updated_at) }}</el-descriptions-item>
-            <el-descriptions-item label="下载量">{{ selectedKB.downloads || 0 }}</el-descriptions-item>
-            <el-descriptions-item label="收藏量">{{ selectedKB.star_count || 0 }}</el-descriptions-item>
+            <el-descriptions-item label="名称">{{ safeSelectedKB.name || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="作者">{{ getAuthorName(safeSelectedKB) }}</el-descriptions-item>
+            <el-descriptions-item label="创建时间">{{ formatDate(safeSelectedKB.created_at) }}</el-descriptions-item>
+            <el-descriptions-item label="更新时间">{{ formatDate(safeSelectedKB.updated_at) }}</el-descriptions-item>
+            <el-descriptions-item label="下载量">{{ safeSelectedKB.downloads || 0 }}</el-descriptions-item>
+            <el-descriptions-item label="收藏量">{{ safeSelectedKB.star_count || 0 }}</el-descriptions-item>
             <el-descriptions-item label="标签" :span="2">
-              <span v-if="selectedKB.tags && selectedKB.tags.length > 0">
-                <el-tag v-for="(tag, index) in selectedKB.tags" :key="index" size="small" style="margin-right: 5px;">{{ tag }}</el-tag>
+              <span v-if="safeSelectedKB.tags && safeSelectedKB.tags.length > 0">
+                <el-tag v-for="(tag, index) in safeSelectedKB.tags" :key="index" size="small" style="margin-right: 5px;">{{ tag }}</el-tag>
               </span>
               <span v-else>-</span>
             </el-descriptions-item>
-            <el-descriptions-item label="描述" :span="2">{{ selectedKB.description || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="描述" :span="2">{{ safeSelectedKB.description || '-' }}</el-descriptions-item>
           </el-descriptions>
         </div>
 
@@ -150,35 +196,88 @@
         <!-- 文件列表 -->
         <div class="files-list-section">
           <h4>文件列表</h4>
-          <el-table :data="selectedKB.files || []" style="width: 100%">
+          <el-table :data="safeSelectedKB.files || []" style="width: 100%">
             <el-table-column label="文件名" width="auto">
               <template #default="scope">{{ scope.row.original_name || '-' }}</template>
             </el-table-column>
-            <el-table-column label="大小" width="120">
+            <el-table-column
+              label="大小"
+              width="120"
+              align="center"
+              header-align="center"
+            >
               <template #default="scope">{{ formatFileSize(scope.row.file_size) }}</template>
             </el-table-column>
-            <el-table-column label="操作" width="100" fixed="right">
+            <el-table-column
+              label="操作"
+              width="140"
+              fixed="right"
+              align="center"
+              header-align="center"
+            >
               <template #default="scope">
-                <el-button type="primary" text @click="downloadFile(scope.row)">
-                  <el-icon><Download /></el-icon>
-                  下载
-                </el-button>
+                <el-tooltip content="浏览文件" placement="top">
+                  <el-button
+                    type="primary"
+                    text
+                    circle
+                    size="small"
+                    @click="previewFile(scope.row)"
+                  >
+                    <el-icon>
+                      <View />
+                    </el-icon>
+                  </el-button>
+                </el-tooltip>
+                <el-tooltip content="下载文件" placement="top">
+                  <el-button
+                    type="primary"
+                    text
+                    circle
+                    size="small"
+                    @click="downloadFile(scope.row)"
+                  >
+                    <el-icon><Download /></el-icon>
+                  </el-button>
+                </el-tooltip>
               </template>
             </el-table-column>
           </el-table>
         </div>
+        <CommentSection
+          v-if="safeSelectedKB && safeSelectedKB.id"
+          target-type="knowledge"
+          :target-id="safeSelectedKB.id"
+          :owner-id="safeSelectedKB.uploader_id || safeSelectedKB.author_id || ''"
+        />
       </div>
     </el-drawer>
+    <FileViewerDialog
+      v-model:visible="fileViewerVisible"
+      :title="fileViewerTitle"
+      :file-name="fileViewerFileName"
+      :content="fileViewerContent"
+      :language="fileViewerLanguage"
+      :loading="fileViewerLoading"
+      @download="downloadFromViewer"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { Star, StarFilled, Download } from '@element-plus/icons-vue'
-import { ElMessage, ElIcon } from 'element-plus'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { Star, StarFilled, Download, View } from '@element-plus/icons-vue'
+import { ElMessage, ElIcon, ElAvatar } from 'element-plus'
+import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import CommentSection from '@/components/CommentSection.vue'
 import { getPublicKnowledgeBase, starKnowledgeBase, unstarKnowledgeBase, getKnowledgeBaseDetail, checkKnowledgeBaseStarred } from '@/api/knowledge'
 import { handleApiError } from '@/utils/api'
+import { useKnowledgeStore } from '@/stores/knowledge'
 
+const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
+
+// 搜索输入（GitHub 风格语法）
 // 搜索表单
 const searchForm = reactive({
   name: '',
@@ -200,7 +299,17 @@ const knowledgeBases = ref([])
 
 // 详情弹窗
 const dialogVisible = ref(false)
-const selectedKB = ref({})
+const knowledgeStore = useKnowledgeStore()
+const { currentKB: selectedKB } = storeToRefs(knowledgeStore)
+const safeSelectedKB = computed(() => selectedKB.value || {})
+
+const fileViewerVisible = ref(false)
+const fileViewerTitle = ref('')
+const fileViewerFileName = ref('')
+const fileViewerContent = ref('')
+const fileViewerLanguage = ref('')
+const fileViewerLoading = ref(false)
+const fileViewerFile = ref(null)
 
 // 获取知识库列表
 const getKnowledgeBases = async () => {
@@ -329,8 +438,11 @@ const showKBDetail = async (kb) => {
 // 下载单个文件
 const downloadFile = async (file) => {
   try {
-    // 使用正确的API端点下载单个文件
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${selectedKB.id}/file/${file.file_id}`
+    if (!selectedKB.value || !selectedKB.value.id) {
+      ElMessage.error('未找到要下载的知识库')
+      return
+    }
+    const downloadUrl = `${apiBase}/knowledge/${selectedKB.value.id}/file/${file.file_id}`
     
     // 使用fetch API获取文件
     const response = await fetch(downloadUrl, {
@@ -368,11 +480,78 @@ const downloadFile = async (file) => {
   }
 }
 
-// 下载全部文件
+const resolveFileLanguage = (fileName) => {
+  const lower = (fileName || '').toLowerCase()
+  if (lower.endsWith('.toml')) {
+    return 'toml'
+  }
+  if (lower.endsWith('.json')) {
+    return 'json'
+  }
+  return 'txt'
+}
+
+const isPreviewableFile = (file) => {
+  const name = (file && file.original_name) || ''
+  const lower = name.toLowerCase()
+  return lower.endsWith('.toml') || lower.endsWith('.json') || lower.endsWith('.txt')
+}
+
+const previewFile = async (file) => {
+  if (!selectedKB.value || !selectedKB.value.id) {
+    ElMessage.error('未找到要预览的知识库')
+    return
+  }
+  if (!isPreviewableFile(file)) {
+    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    return
+  }
+  const name = file.original_name || ''
+  fileViewerTitle.value = name || '文件预览'
+  fileViewerFileName.value = name
+  fileViewerLanguage.value = resolveFileLanguage(name)
+  fileViewerContent.value = ''
+  fileViewerVisible.value = true
+  fileViewerLoading.value = true
+  fileViewerFile.value = file
+  try {
+    const previewUrl = `${apiBase}/knowledge/${selectedKB.value.id}/file/${file.file_id}`
+    const response = await fetch(previewUrl, {
+      method: 'GET',
+      credentials: 'include',
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('access_token')}`
+      }
+    })
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`预览失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
+    }
+    const text = await response.text()
+    fileViewerContent.value = text
+  } catch (error) {
+    console.error('预览文件错误:', error)
+    ElMessage.error('预览失败: ' + error.message)
+    fileViewerVisible.value = false
+  } finally {
+    fileViewerLoading.value = false
+  }
+}
+
+const downloadFromViewer = async () => {
+  if (!fileViewerFile.value) {
+    return
+  }
+  await downloadFile(fileViewerFile.value)
+}
+
 const downloadAllFiles = async () => {
   try {
-    // 使用正确的API端点下载全部文件
-    const downloadUrl = `${import.meta.env.VUE_APP_API_BASE_URL}/knowledge/${selectedKB.id}/download`
+    if (!selectedKB.value || !selectedKB.value.id) {
+      ElMessage.error('未找到要下载的知识库')
+      return
+    }
+    const downloadUrl = `${apiBase}/knowledge/${selectedKB.value.id}/download`
     
     // 显示加载状态
     const loading = ElMessage({
@@ -382,7 +561,6 @@ const downloadAllFiles = async () => {
       showClose: true
     })
     
-    // 使用fetch API获取文件
     console.log('开始下载，URL:', downloadUrl)
     const response = await fetch(downloadUrl, {
       method: 'GET',
@@ -403,16 +581,23 @@ const downloadAllFiles = async () => {
       throw new Error(`下载失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
     }
     
-    // 将响应转换为blob对象
     const blob = await response.blob()
     console.log('下载成功，blob大小:', blob.size)
     console.log('blob类型:', blob.type)
     
-    // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `${selectedKB.name}.zip`
+    const kb = selectedKB.value || {}
+    const kbName = kb.name || '未命名知识库'
+    const author = getAuthorName(kb) || '未知作者'
+    const updatedAt = kb.updated_at || kb.created_at
+    const date = updatedAt ? new Date(updatedAt) : new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    const ts = `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`
+    const sanitize = (value) => String(value).replace(/[\\/:*?"<>|]/g, '_').trim()
+    const finalName = `知识库_${sanitize(kbName)}_${sanitize(author)}_${ts}`
+    link.download = `${finalName}.zip`
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -430,11 +615,45 @@ const downloadAllFiles = async () => {
   }
 }
 
-// 格式化日期
+const getAuthorName = (item) => {
+  if (!item) {
+    return '用户已注销'
+  }
+  if (item.author) {
+    return item.author
+  }
+  if (item.uploader_name) {
+    return item.uploader_name
+  }
+  if (item.author_id) {
+    return item.author_id
+  }
+  if (item.uploader_id) {
+    return item.uploader_id
+  }
+  return '用户已注销'
+}
+
+const getAuthorDisplay = (item) => {
+  const name = getAuthorName(item)
+  return name ? `作者: ${name}` : '作者: 用户已注销'
+}
+
+// 格式化日期时间（含时间）
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
   return date.toLocaleString()
+}
+
+// 仅格式化日期（不含时分秒）
+const formatDateOnly = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) {
+    return ''
+  }
+  return date.toLocaleDateString()
 }
 
 // 格式化文件大小
@@ -449,6 +668,30 @@ const formatFileSize = (size) => {
   } else {
     return `${(size / (1024 * 1024)).toFixed(2)} MB`
   }
+}
+
+const getKBInitial = (name) => {
+  if (!name) {
+    return ''
+  }
+  const trimmed = String(name).trim()
+  if (!trimmed) {
+    return ''
+  }
+  return trimmed[0].toUpperCase()
+}
+
+const resolveAuthorAvatar = (kb) => {
+  if (!kb || !kb.author_id) {
+    return ''
+  }
+  const base = apiBase || ''
+  const trimmedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  let url = `${trimmedBase}/users/${kb.author_id}/avatar?size=64`
+  if (kb.avatar_updated_at) {
+    url += `&t=${encodeURIComponent(kb.avatar_updated_at)}`
+  }
+  return url
 }
 
 onMounted(() => {
@@ -497,6 +740,38 @@ onMounted(() => {
   border-color: var(--secondary-color);
 }
 
+.search-btn-group {
+  margin-left: 4px;
+}
+
+.sort-select {
+  width: 100%;
+}
+
+.search-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.search-input {
+  flex: 1;
+  min-width: 220px;
+}
+
+.filter-input {
+  width: 180px;
+}
+
+.sort-select {
+  width: 140px;
+}
+
+.sort-order-select {
+  width: 120px;
+}
+
 .knowledge-base-list-container {
   flex: 1;
   overflow-y: auto;
@@ -505,7 +780,7 @@ onMounted(() => {
 
 .knowledge-base-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 20px;
 }
 
@@ -526,6 +801,16 @@ onMounted(() => {
   margin-bottom: 10px;
 }
 
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.kb-avatar {
+  flex-shrink: 0;
+}
+
 .card-name {
   font-size: 16px;
   font-weight: bold;
@@ -534,7 +819,7 @@ onMounted(() => {
 }
 
 .card-author {
-  color: #999;
+  color: var(--muted-text-color);
   font-size: 14px;
   margin-bottom: 10px;
 }
@@ -544,27 +829,55 @@ onMounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
+  line-clamp: 3;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  color: #ccc;
+  color: var(--muted-text-color);
   font-size: 14px;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
+}
+
+.card-tags {
+  margin-bottom: 6px;
+}
+
+.card-tags :deep(.el-tag) {
+  margin-right: 4px;
+}
+
+.card-meta {
+  font-size: 12px;
+  color: var(--muted-text-color);
+}
+
+.card-file-stat {
+  margin-left: 4px;
 }
 
 .card-stats {
   display: flex;
   gap: 15px;
-  position: absolute;
-  bottom: 15px;
-  right: 15px;
+  align-items: center;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #999;
+  color: var(--muted-text-color);
   font-size: 14px;
+}
+
+.stat-star {
+  cursor: pointer;
+}
+
+.stat-star :deep(.el-icon) {
+  color: var(--muted-text-color);
+}
+
+.stat-star-active :deep(.el-icon) {
+  color: #f90;
 }
 
 .pagination-section {
@@ -592,18 +905,6 @@ onMounted(() => {
 :deep(.el-drawer__headerbtn) {
   top: 20px;
   right: 20px;
-}
-
-/* 增大收藏按钮尺寸 */
-.star-button {
-  font-size: 24px !important;
-  padding: 4px !important;
-  color: #999 !important;
-  transform: scale(1.2); /* 放大按钮 */
-}
-
-.star-button:hover {
-  color: #f90 !important;
 }
 
 .dialog-content {
