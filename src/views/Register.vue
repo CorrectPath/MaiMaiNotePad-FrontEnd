@@ -163,7 +163,11 @@ const sendVerificationCode = async () => {
   }
 
   try {
-    await checkRegisterLegality(registerForm.username, fullEmail)
+    const checkResponse = await checkRegisterLegality(registerForm.username, fullEmail)
+    if (!checkResponse.success) {
+      ElMessage.error(checkResponse.message || '注册信息不合法，请检查用户名和邮箱')
+      return
+    }
 
     const response = await sendVerificationCodeApi(fullEmail)
     if (response.success) {

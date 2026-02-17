@@ -64,18 +64,25 @@
               prop="role"
               label="角色"
             >
-            <template #default="scope">
-              <el-select
-                v-model="scope.row.role"
-                size="small"
-                @change="(value) => handleChangeRole(scope.row, value)"
-              >
-                <el-option label="普通用户" value="user" />
-                <el-option label="审核员" value="moderator" />
-                <el-option label="管理员" value="admin" />
-              </el-select>
-            </template>
-          </el-table-column>
+              <template #default="scope">
+                <template v-if="scope.row.role === 'super_admin'">
+                  <el-tag type="danger">
+                    超级管理员
+                  </el-tag>
+                </template>
+                <template v-else>
+                  <el-select
+                    v-model="scope.row.role"
+                    size="small"
+                    @change="(value) => handleChangeRole(scope.row, value)"
+                  >
+                    <el-option label="普通用户" value="user" />
+                    <el-option label="审核员" value="moderator" />
+                    <el-option label="管理员" value="admin" />
+                  </el-select>
+                </template>
+              </template>
+            </el-table-column>
             <el-table-column
             prop="status"
             label="状态"

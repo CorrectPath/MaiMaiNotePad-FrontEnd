@@ -15,6 +15,7 @@ import KnowledgeReview from '../views/KnowledgeReview.vue'
 import AdminUserManagement from '../views/AdminUserManagement.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
 import AdminMuteManagement from '../views/AdminMuteManagement.vue'
+import AdminAnnouncement from '../views/AdminAnnouncement.vue'
 import FavoritePersona from '../views/FavoritePersona.vue'
 import FavoriteKnowledge from '../views/FavoriteKnowledge.vue'
 
@@ -142,6 +143,14 @@ const routes = [
         component: AdminDashboard,
         meta: {
           pageTitle: '运营看板'
+        }
+      },
+      {
+        path: '/admin-announcement',
+        name: 'AdminAnnouncement',
+        component: AdminAnnouncement,
+        meta: {
+          pageTitle: '发布公告'
         }
       },
       {
