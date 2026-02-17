@@ -70,9 +70,8 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { Message, CircleCheck, Lock } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import { sendResetPasswordCode, resetPassword } from '@/api/user'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
 
 const router = useRouter()
 const resetFormRef = ref()
@@ -133,21 +132,21 @@ const resetRules = {
 
 const handleSendCode = async () => {
   if (!resetForm.emailLocal) {
-    ElMessage.warning('请先输入邮箱')
+    showWarningNotification('请先输入邮箱')
     return
   }
 
   const fullEmail = resetForm.emailLocal + '.com'
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(fullEmail)) {
-    ElMessage.warning('请输入有效的邮箱地址')
+    showWarningNotification('请输入有效的邮箱地址')
     return
   }
 
   try {
     const response = await sendResetPasswordCode(fullEmail)
     if (response.success) {
-      ElMessage.success('验证码发送成功')
+      showSuccessNotification('验证码发送成功')
       countdown.value = 60
       countdownTimer = setInterval(() => {
         countdown.value--
@@ -156,11 +155,10 @@ const handleSendCode = async () => {
         }
       }, 1000)
     } else {
-      ElMessage.error(response.message || '验证码发送失败')
+      showErrorNotification(response.message || '验证码发送失败')
     }
   } catch (error) {
-    const errorMessage = handleApiError(error, '验证码发送失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '验证码发送失败，请检查网络连接')
   }
 }
 
@@ -176,14 +174,13 @@ const handleReset = async () => {
           resetForm.new_password
         )
         if (response.success) {
-          ElMessage.success('密码重置成功，请使用新密码登录')
+          showSuccessNotification('密码重置成功，请使用新密码登录')
           router.push('/login')
         } else {
-          ElMessage.error(response.message || '密码重置失败')
+          showErrorNotification(response.message || '密码重置失败')
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '密码重置失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '密码重置失败，请检查网络连接')
       }
     } else {
       return false

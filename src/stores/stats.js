@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { getMyUploadStats, getAdminUploadStats } from '@/api/stats'
 import { getAdminStats } from '@/api/admin'
-import { handleApiError } from '@/utils/api'
-import { ElMessage } from 'element-plus'
+import { handleApiError, showApiErrorNotification, showErrorNotification } from '@/utils/api'
 
 export const useStatsStore = defineStore('stats', {
   state: () => ({
@@ -34,11 +33,10 @@ export const useStatsStore = defineStore('stats', {
           this.myStats = response.data
           this.myStatsLoaded = true
         } else {
-          ElMessage.error((response && response.message) || '获取上传统计失败')
+          showErrorNotification((response && response.message) || '获取上传统计失败')
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '获取上传统计失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '获取上传统计失败，请检查网络连接')
       } finally {
         this.myStatsLoading = false
       }
@@ -63,11 +61,10 @@ export const useStatsStore = defineStore('stats', {
           this.adminStats = response
           this.adminStatsLoaded = true
         } else {
-          ElMessage.error((response && response.message) || '获取系统统计失败')
+          showErrorNotification((response && response.message) || '获取系统统计失败')
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '获取系统统计失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '获取系统统计失败，请检查网络连接')
       } finally {
         this.adminStatsLoading = false
       }
@@ -92,11 +89,10 @@ export const useStatsStore = defineStore('stats', {
           this.adminUploadStats = response
           this.adminUploadStatsLoaded = true
         } else {
-          ElMessage.error((response && response.message) || '获取上传统计失败')
+          showErrorNotification((response && response.message) || '获取上传统计失败')
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '获取上传统计失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '获取上传统计失败，请检查网络连接')
       } finally {
         this.adminUploadStatsLoading = false
       }

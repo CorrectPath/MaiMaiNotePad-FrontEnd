@@ -268,11 +268,11 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Star, StarFilled, Download, View } from '@element-plus/icons-vue'
-import { ElMessage, ElIcon, ElAvatar } from 'element-plus'
+import { ElIcon, ElAvatar } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import CommentSection from '@/components/CommentSection.vue'
 import { getPublicKnowledgeBase, starKnowledgeBase, unstarKnowledgeBase, getKnowledgeBaseDetail, checkKnowledgeBaseStarred } from '@/api/knowledge'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
 import { useKnowledgeStore } from '@/stores/knowledge'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
@@ -322,22 +322,18 @@ const getKnowledgeBases = async () => {
     
     const response = await getPublicKnowledgeBase(params)
     if (response.success) {
-      // 处理返回的数据
-      knowledgeBases.value = response.data.map(kb => ({
+      knowledgeBases.value = response.data.map((kb) => ({
         ...kb,
-        isStarred: false // 初始化收藏状态
+        isStarred: false
       }))
       pagination.total = response.total
-      
-      // 检查每个知识库的收藏状态
       await checkAllStarStatus()
     } else {
-      ElMessage.error(response.message || '获取知识库列表失败')
+      showErrorNotification(response.message || '获取知识库列表失败')
     }
   } catch (error) {
     console.error('获取知识库列表错误:', error)
-    const errorMessage = handleApiError(error, '获取知识库列表失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '获取知识库列表失败，请检查网络连接')
   }
 }
 
@@ -406,32 +402,29 @@ const toggleStar = async (kb) => {
       } else {
         kb.star_count--
       }
-      ElMessage.success(kb.isStarred ? '收藏成功' : '取消收藏成功')
+      showSuccessNotification(kb.isStarred ? '收藏成功' : '取消收藏成功')
     } else {
-      ElMessage.error(response.message || (kb.isStarred ? '取消收藏失败' : '收藏失败'))
+      showErrorNotification(response.message || (kb.isStarred ? '取消收藏失败' : '收藏失败'))
     }
   } catch (error) {
     console.error('Star操作错误:', error)
-    const errorMessage = handleApiError(error, '操作失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '操作失败，请检查网络连接')
   }
 }
 
 // 显示详情弹窗
 const showKBDetail = async (kb) => {
   try {
-    // 调用详情接口获取真实数据
     const response = await getKnowledgeBaseDetail(kb.id)
     if (response.success) {
       selectedKB.value = response.data
       dialogVisible.value = true
     } else {
-      ElMessage.error(response.message || '获取知识库详情失败')
+      showErrorNotification(response.message || '获取知识库详情失败')
     }
   } catch (error) {
     console.error('获取知识库详情错误:', error)
-    const errorMessage = handleApiError(error, '获取知识库详情失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '获取知识库详情失败，请检查网络连接')
   }
 }
 
@@ -439,7 +432,7 @@ const showKBDetail = async (kb) => {
 const downloadFile = async (file) => {
   try {
     if (!selectedKB.value || !selectedKB.value.id) {
-      ElMessage.error('未找到要下载的知识库')
+      showErrorNotification('未找到要下载的知识库')
       return
     }
     const downloadUrl = `${apiBase}/knowledge/${selectedKB.value.id}/file/${file.file_id}`
@@ -473,10 +466,10 @@ const downloadFile = async (file) => {
     // 释放URL对象
     window.URL.revokeObjectURL(url)
     
-    ElMessage.success(`开始下载文件: ${file.original_name}`)
+    showSuccessNotification(`开始下载文件: ${file.original_name}`)
   } catch (error) {
     console.error('下载单个文件错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
@@ -499,11 +492,11 @@ const isPreviewableFile = (file) => {
 
 const previewFile = async (file) => {
   if (!selectedKB.value || !selectedKB.value.id) {
-    ElMessage.error('未找到要预览的知识库')
+    showErrorNotification('未找到要预览的知识库')
     return
   }
   if (!isPreviewableFile(file)) {
-    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    showErrorNotification('当前文件类型暂不支持在线预览，请使用下载功能查看')
     return
   }
   const name = file.original_name || ''
@@ -531,7 +524,7 @@ const previewFile = async (file) => {
     fileViewerContent.value = text
   } catch (error) {
     console.error('预览文件错误:', error)
-    ElMessage.error('预览失败: ' + error.message)
+    showErrorNotification('预览失败: ' + error.message)
     fileViewerVisible.value = false
   } finally {
     fileViewerLoading.value = false
@@ -548,18 +541,13 @@ const downloadFromViewer = async () => {
 const downloadAllFiles = async () => {
   try {
     if (!selectedKB.value || !selectedKB.value.id) {
-      ElMessage.error('未找到要下载的知识库')
+      showErrorNotification('未找到要下载的知识库')
       return
     }
     const downloadUrl = `${apiBase}/knowledge/${selectedKB.value.id}/download`
     
     // 显示加载状态
-    const loading = ElMessage({
-      message: '正在准备下载文件...',
-      type: 'info',
-      duration: 0,
-      showClose: true
-    })
+    const loading = showInfoNotification('正在准备下载文件...', { duration: 0 })
     
     console.log('开始下载，URL:', downloadUrl)
     const response = await fetch(downloadUrl, {
@@ -607,11 +595,10 @@ const downloadAllFiles = async () => {
     
     // 关闭加载提示
     loading.close()
-    
-    ElMessage.success('开始下载知识库文件压缩包')
+    showSuccessNotification('开始下载知识库文件压缩包')
   } catch (error) {
     console.error('下载知识库文件压缩包错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 

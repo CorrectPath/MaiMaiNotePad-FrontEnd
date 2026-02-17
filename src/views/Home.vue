@@ -376,9 +376,8 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
 import { UserFilled, Collection, Fold, Expand, Bell, RefreshRight, Check, StarFilled } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification } from '@/utils/api'
 import websocket from '@/utils/websocket'
 import { useUserStore } from '@/stores/user'
 import { useMessageStore } from '@/stores/messages'
@@ -609,8 +608,7 @@ const initMyDataCharts = async () => {
       dashboardTrends.value = trendResp
     }
   } catch (error) {
-    const errorMessage = handleApiError(error, '获取下载、收藏数据失败，请稍后重试')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '获取下载、收藏数据失败，请稍后重试')
     dashboardStats.value = null
     dashboardTrends.value = null
   } finally {

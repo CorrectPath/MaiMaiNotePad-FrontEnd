@@ -187,12 +187,12 @@
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ElMessage, ElMessageBox, ElAvatar, ElIcon } from 'element-plus'
+import { ElMessageBox, ElAvatar, ElIcon } from 'element-plus'
 import { Download, View } from '@element-plus/icons-vue'
 import ReviewList from '@/components/ReviewList.vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import { getPendingKnowledgeReview, approveKnowledgeBaseReview, rejectKnowledgeBaseReview, getKnowledgeBaseDetail } from '@/api/knowledge'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { useKnowledgeStore } from '@/stores/knowledge'
 
@@ -238,8 +238,7 @@ const fetchCurrentUserRole = async () => {
     const role = user.value && user.value.role
     isAdmin.value = role === 'admin'
   } catch (error) {
-    const message = handleApiError(error, '获取用户信息失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取用户信息失败')
   }
 }
 
@@ -267,11 +266,10 @@ const fetchReviewList = async () => {
       reviewList.value = response.data || []
       pagination.total = response.total || 0
     } else {
-      ElMessage.error((response && response.message) || '获取待审核知识库失败')
+      showErrorNotification((response && response.message) || '获取待审核知识库失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取待审核知识库失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取待审核知识库失败')
   } finally {
     loading.value = false
   }
@@ -287,11 +285,10 @@ const showKBDetail = async (kb) => {
       selectedKB.value = response.data || {}
       detailDialogVisible.value = true
     } else {
-      ElMessage.error((response && response.message) || '获取知识库详情失败')
+      showErrorNotification((response && response.message) || '获取知识库详情失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取知识库详情失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取知识库详情失败')
   }
 }
 
@@ -326,14 +323,13 @@ const handleApprove = async (kb) => {
   try {
     const response = await approveKnowledgeBaseReview(kb.id)
     if (response && response.success) {
-      ElMessage.success(response.message || '审核通过成功')
+      showSuccessNotification(response.message || '审核通过成功')
       fetchReviewList()
     } else {
-      ElMessage.error((response && response.message) || '审核通过失败')
+      showErrorNotification((response && response.message) || '审核通过失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '审核通过失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '审核通过失败')
   }
 }
 
@@ -359,17 +355,16 @@ const handleReject = async (kb) => {
     )
     const response = await rejectKnowledgeBaseReview(kb.id, value)
     if (response && response.success) {
-      ElMessage.success(response.message || '审核拒绝成功')
+      showSuccessNotification(response.message || '审核拒绝成功')
       fetchReviewList()
     } else {
-      ElMessage.error((response && response.message) || '审核拒绝失败')
+      showErrorNotification((response && response.message) || '审核拒绝失败')
     }
   } catch (error) {
     if (error === 'cancel') {
       return
     }
-    const message = handleApiError(error, '审核拒绝失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '审核拒绝失败')
   }
 }
 
@@ -420,7 +415,7 @@ const formatFileSize = (size) => {
 
 const downloadFile = async (file) => {
   if (!selectedKB.value || !selectedKB.value.id) {
-    ElMessage.error('未找到要下载的知识库')
+    showErrorNotification('未找到要下载的知识库')
     return
   }
   try {
@@ -445,9 +440,9 @@ const downloadFile = async (file) => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success(`开始下载文件: ${file.original_name}`)
+    showSuccessNotification(`开始下载文件: ${file.original_name}`)
   } catch (error) {
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
@@ -470,11 +465,11 @@ const isPreviewableFile = (file) => {
 
 const previewFile = async (file) => {
   if (!selectedKB.value || !selectedKB.value.id) {
-    ElMessage.error('未找到要预览的知识库')
+    showErrorNotification('未找到要预览的知识库')
     return
   }
   if (!isPreviewableFile(file)) {
-    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    showErrorNotification('当前文件类型暂不支持在线预览，请使用下载功能查看')
     return
   }
   const name = file.original_name || ''
@@ -501,7 +496,7 @@ const previewFile = async (file) => {
     const text = await response.text()
     fileViewerContent.value = text
   } catch (error) {
-    ElMessage.error('预览失败: ' + error.message)
+    showErrorNotification('预览失败: ' + error.message)
     fileViewerVisible.value = false
   } finally {
     fileViewerLoading.value = false

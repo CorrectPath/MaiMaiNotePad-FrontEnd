@@ -360,10 +360,10 @@
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
 import { getComments, createComment, deleteComment, reactComment, restoreComment } from '@/api/comments'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 
 const props = defineProps({
@@ -581,8 +581,7 @@ const fetchComments = async () => {
       rebuildTree([])
     }
   } catch (error) {
-    const message = handleApiError(error, '获取评论失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取评论失败')
   } finally {
     loading.value = false
   }
@@ -594,7 +593,7 @@ const handleSubmit = async () => {
     return
   }
   if (text.length > 500) {
-    ElMessage.error('评论内容不能超过500字')
+    showErrorNotification('评论内容不能超过500字')
     return
   }
   submitting.value = true
@@ -608,7 +607,7 @@ const handleSubmit = async () => {
     if (response && response.data) {
       content.value = ''
       await fetchComments()
-      ElMessage.success('评论已发布')
+      showSuccessNotification('评论已发布')
     }
   } catch (error) {
     const response = error && error.response
@@ -622,8 +621,7 @@ const handleSubmit = async () => {
         confirmButtonText: '知道了'
       })
     } else {
-      const message = handleApiError(error, '发表评论失败')
-      ElMessage.error(message)
+      showApiErrorNotification(error, '发表评论失败')
     }
   } finally {
     submitting.value = false
@@ -652,7 +650,7 @@ const handleSubmitReply = async () => {
     return
   }
   if (text.length > 500) {
-    ElMessage.error('回复内容不能超过500字')
+    showErrorNotification('回复内容不能超过500字')
     return
   }
   submittingReply.value = true
@@ -668,7 +666,7 @@ const handleSubmitReply = async () => {
       replyContent.value = ''
       replyingTo.value = null
       await fetchComments()
-      ElMessage.success('回复已发布')
+      showSuccessNotification('回复已发布')
     }
   } catch (error) {
     const response = error && error.response
@@ -682,8 +680,7 @@ const handleSubmitReply = async () => {
         confirmButtonText: '知道了'
       })
     } else {
-      const message = handleApiError(error, '发送回复失败')
-      ElMessage.error(message)
+      showApiErrorNotification(error, '发送回复失败')
     }
   } finally {
     submittingReply.value = false
@@ -715,19 +712,15 @@ const handleDelete = async (item) => {
       id: item.id,
       parentId: item.parentId
     }
-    ElMessage({
-      message: '评论已删除',
-      type: 'success',
+    showSuccessNotification('评论已删除', {
       duration: 3000,
-      showClose: true,
       onClose: () => {
         lastDeleted.value = null
       }
     })
     await fetchComments()
   } catch (error) {
-    const message = handleApiError(error, '删除评论失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '删除评论失败')
   } finally {
     deletingIds.value.delete(item.id)
   }
@@ -742,10 +735,9 @@ const handleUndoDelete = async () => {
     await restoreComment(payload.id)
     lastDeleted.value = null
     await fetchComments()
-    ElMessage.success('已撤销删除')
+    showSuccessNotification('已撤销删除')
   } catch (error) {
-    const message = handleApiError(error, '撤销删除失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '撤销删除失败')
   }
 }
 
@@ -754,7 +746,7 @@ const handleReact = async (item, action) => {
     return
   }
   if (!user.value) {
-    ElMessage.warning('请先登录后再进行互动')
+    showWarningNotification('请先登录后再进行互动')
     return
   }
   if (reactingIds.value.has(item.id)) {
@@ -773,8 +765,7 @@ const handleReact = async (item, action) => {
       item.myReaction = response.data.myReaction
     }
   } catch (error) {
-    const message = handleApiError(error, '操作失败，请稍后重试')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '操作失败，请稍后重试')
   } finally {
     reactingIds.value.delete(item.id)
   }

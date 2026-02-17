@@ -291,9 +291,9 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { getAdminUsers, updateUserRole, deleteUser, createUserByAdmin, banUser, unbanUser } from '@/api/admin'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
 
 const loading = ref(false)
 const userList = ref([])
@@ -431,8 +431,7 @@ const fetchUserList = async () => {
     userList.value = items
     pagination.total = typeof total === 'number' ? total : 0
   } catch (error) {
-    const message = handleApiError(error, '获取用户列表失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取用户列表失败')
   } finally {
     loading.value = false
   }
@@ -467,11 +466,10 @@ const handleChangeRole = async (row, newRole) => {
   }
   try {
     await updateUserRole(row.id, newRole)
-    ElMessage.success('角色更新成功')
+    showSuccessNotification('角色更新成功')
     fetchUserList()
   } catch (error) {
-    const message = handleApiError(error, '更新用户角色失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '更新用户角色失败')
     fetchUserList()
   }
 }
@@ -500,17 +498,16 @@ const handleConfirmBan = async () => {
       ? banReason.value.map((item) => String(item || '').trim()).filter(Boolean)
       : []
     if (!reasons.length) {
-      ElMessage.warning('请至少选择或输入一个封禁原因')
+      showWarningNotification('请至少选择或输入一个封禁原因')
       return
     }
     const reasonText = reasons.join('；')
     await banUser(banTargetUser.value.id, banDuration.value, reasonText)
-    ElMessage.success('用户已封禁')
+    showSuccessNotification('用户已封禁')
     handleCloseBanDialog()
     fetchUserList()
   } catch (error) {
-    const message = handleApiError(error, '封禁用户失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '封禁用户失败')
   }
 }
 
@@ -520,7 +517,7 @@ const handleViewBanReason = (row) => {
   }
   const reason = (row.banReason || '').trim()
   if (!reason) {
-    ElMessage.info('暂无封禁原因信息')
+    showInfoNotification('暂无封禁原因信息')
     return
   }
   ElMessageBox.alert(reason, '封禁原因', {
@@ -545,11 +542,10 @@ const handleUnbanUser = async (row) => {
   }
   try {
     await unbanUser(row.id)
-    ElMessage.success('用户已解封')
+    showSuccessNotification('用户已解封')
     fetchUserList()
   } catch (error) {
-    const message = handleApiError(error, '解封用户失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '解封用户失败')
     fetchUserList()
   }
 }
@@ -571,11 +567,10 @@ const handleDeleteUser = async (row) => {
   }
   try {
     await deleteUser(row.id)
-    ElMessage.success('用户账号已删除')
+    showSuccessNotification('用户账号已删除')
     fetchUserList()
   } catch (error) {
-    const message = handleApiError(error, '删除用户失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '删除用户失败')
     fetchUserList()
   }
 }
@@ -612,12 +607,12 @@ const handleSubmitCreate = () => {
         role: createForm.role
       }
       await createUserByAdmin(payload)
-      ElMessage.success('创建用户成功')
+      showSuccessNotification('创建用户成功')
       createDialogVisible.value = false
       fetchUserList()
     } catch (error) {
       const message = handleApiError(error, '创建用户失败')
-      ElMessage.error(message)
+      showErrorNotification(message)
     } finally {
       createSubmitting.value = false
     }

@@ -45,9 +45,9 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { login } from '@/api/user'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
 
 const router = useRouter()
 const loginFormRef = ref()
@@ -103,10 +103,10 @@ const handleLogin = async () => {
             localStorage.removeItem('rememberedLogin')
           }
           
-          ElMessage.success('登录成功')
+          showSuccessNotification('登录成功')
           router.push('/home')
         } else {
-          ElMessage.error(response.message || '登录失败')
+          showErrorNotification(response.message || '登录失败')
         }
       } catch (error) {
         console.error('登录错误:', error)
@@ -121,8 +121,7 @@ const handleLogin = async () => {
             confirmButtonText: '知道了'
           })
         } else {
-          const errorMessage = handleApiError(error, '登录失败，请检查网络连接')
-          ElMessage.error(errorMessage)
+          showApiErrorNotification(error, '登录失败，请检查网络连接')
         }
       }
     } else {

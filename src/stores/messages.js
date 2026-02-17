@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { getMessages, getMessagesByType, markMessageRead } from '@/api/messages'
-import { handleApiError } from '@/utils/api'
-import { ElMessage } from 'element-plus'
+import { handleApiError, showApiErrorNotification, showErrorNotification } from '@/utils/api'
 
 export const useMessageStore = defineStore('messages', {
   state: () => ({
@@ -55,11 +54,10 @@ export const useMessageStore = defineStore('messages', {
           this.items = response.data || []
           this.loaded = true
         } else {
-          ElMessage.error((response && response.message) || '获取消息列表失败')
+          showErrorNotification((response && response.message) || '获取消息列表失败')
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '获取消息列表失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '获取消息列表失败，请检查网络连接')
       } finally {
         this.loading = false
       }
@@ -86,11 +84,10 @@ export const useMessageStore = defineStore('messages', {
           bucket.items = response.data || []
           bucket.loaded = true
         } else {
-          ElMessage.error((response && response.message) || '获取消息列表失败')
+          showErrorNotification((response && response.message) || '获取消息列表失败')
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '获取消息列表失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '获取消息列表失败，请检查网络连接')
       } finally {
         bucket.loading = false
       }
@@ -110,8 +107,7 @@ export const useMessageStore = defineStore('messages', {
         )
         await Promise.all(tasks)
       } catch (error) {
-        const errorMessage = handleApiError(error, '一键标记已读失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '一键标记已读失败，请检查网络连接')
       }
     },
     async markRead(message) {
@@ -126,11 +122,10 @@ export const useMessageStore = defineStore('messages', {
         if (response && response.success) {
           message.is_read = true
         } else if (response && response.message) {
-          ElMessage.error(response.message)
+          showErrorNotification(response.message)
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '标记消息已读失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '标记消息已读失败，请检查网络连接')
       }
     }
   }

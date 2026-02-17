@@ -284,7 +284,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Star, Download, Delete, UploadFilled, Edit } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import MyRepoList from '@/components/MyRepoList.vue'
 import FileListTable from '@/components/FileListTable.vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
@@ -297,7 +297,7 @@ import {
   addFilesToKnowledgeBase,
   deleteFileFromKnowledgeBase
 } from '@/api/knowledge'
-import { handleApiError, formatFileSize, formatDate } from '@/utils/api'
+import { handleApiError, formatFileSize, formatDate, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { useKnowledgeStore } from '@/stores/knowledge'
 
@@ -353,8 +353,7 @@ const fetchKnowledge = async () => {
     try {
       await userStore.fetchCurrentUser()
     } catch (error) {
-      const message = handleApiError(error, '获取用户信息失败')
-      ElMessage.error(message)
+      showApiErrorNotification(error, '获取用户信息失败')
       return
     }
   }
@@ -376,11 +375,10 @@ const fetchKnowledge = async () => {
       knowledgeList.value = response.data || response.items || []
       pagination.total = response.total || 0
     } else {
-      ElMessage.error(response.message || '获取我的知识库失败')
+      showErrorNotification(response.message || '获取我的知识库失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取我的知识库失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取我的知识库失败')
   } finally {
     loading.value = false
   }
@@ -450,14 +448,13 @@ const deleteKB = async (row) => {
   try {
     const response = await deleteKnowledgeBase(row.id)
     if (response.success) {
-      ElMessage.success(response.message || '删除成功')
+      showSuccessNotification(response.message || '删除成功')
       fetchKnowledge()
     } else {
-      ElMessage.error(response.message || '删除失败')
+      showErrorNotification(response.message || '删除失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '删除知识库失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '删除知识库失败')
   }
 }
 
@@ -487,14 +484,13 @@ const requestPublish = async (kb) => {
       is_pending: true
     })
     if (response.success) {
-      ElMessage.success(response.message || '已提交公开申请，等待审核')
+      showSuccessNotification(response.message || '已提交公开申请，等待审核')
       fetchKnowledge()
     } else {
-      ElMessage.error(response.message || '提交公开申请失败')
+      showErrorNotification(response.message || '提交公开申请失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '提交公开申请失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '提交公开申请失败')
   }
 }
 
@@ -508,17 +504,16 @@ const openDetail = async (kb) => {
       editingRemark.value = false
       detailDrawerVisible.value = true
     } else {
-      ElMessage.error((response && response.message) || '获取知识库详情失败')
+      showErrorNotification((response && response.message) || '获取知识库详情失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取知识库详情失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取知识库详情失败')
   }
 }
 
 const openEdit = async (kb) => {
   if (kb.is_public || kb.is_pending) {
-    ElMessage.warning('公开或审核中的知识库不允许修改基本信息和文件（补充说明仍可编辑）')
+    showWarningNotification('公开或审核中的知识库不允许修改基本信息和文件（补充说明仍可编辑）')
     return
   }
   try {
@@ -534,11 +529,10 @@ const openEdit = async (kb) => {
       fileList.value = data.files || []
       editDialogVisible.value = true
     } else {
-      ElMessage.error((response && response.message) || '获取知识库详情失败')
+      showErrorNotification((response && response.message) || '获取知识库详情失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取知识库详情失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取知识库详情失败')
   }
 }
 
@@ -553,15 +547,14 @@ const saveBasicInfo = async () => {
     }
     const response = await updateKnowledgeBase(editingKB.value.id, payload)
     if (response && response.success) {
-      ElMessage.success(response.message || '修改知识库成功')
+      showSuccessNotification(response.message || '修改知识库成功')
       editDialogVisible.value = false
       fetchKnowledge()
     } else {
-      ElMessage.error((response && response.message) || '修改知识库失败')
+      showErrorNotification((response && response.message) || '修改知识库失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '修改知识库失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '修改知识库失败')
   }
 }
 
@@ -575,7 +568,7 @@ const saveRemark = async () => {
     }
     const response = await updateKnowledgeBase(currentKB.value.id, payload)
     if (response && response.success) {
-      ElMessage.success(response.message || '备注已保存')
+      showSuccessNotification(response.message || '备注已保存')
       currentKB.value.content = remarkContent.value
       const target = knowledgeList.value.find((item) => item.id === currentKB.value.id)
       if (target) {
@@ -583,11 +576,10 @@ const saveRemark = async () => {
       }
       editingRemark.value = false
     } else {
-      ElMessage.error((response && response.message) || '保存备注失败')
+      showErrorNotification((response && response.message) || '保存备注失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '保存备注失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '保存备注失败')
   }
 }
 
@@ -633,10 +625,10 @@ const downloadKnowledgeFile = async (kbId, file) => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success(`开始下载文件: ${file.original_name}`)
+    showSuccessNotification(`开始下载文件: ${file.original_name}`)
   } catch (error) {
     console.error('下载单个文件错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
@@ -669,7 +661,7 @@ const openKnowledgeFileViewer = async (kbId, file) => {
     return
   }
   if (!isPreviewableFile(file)) {
-    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    showErrorNotification('当前文件类型暂不支持在线预览，请使用下载功能查看')
     return
   }
   const name = file.original_name || ''
@@ -697,8 +689,7 @@ const openKnowledgeFileViewer = async (kbId, file) => {
     const text = await response.text()
     fileViewerContent.value = text
   } catch (error) {
-    const message = handleApiError(error, '预览文件失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '预览文件失败')
     fileViewerVisible.value = false
   } finally {
     fileViewerLoading.value = false
@@ -732,12 +723,7 @@ const downloadAllFilesInKB = async () => {
   }
   try {
     const downloadUrl = `${apiBase}/knowledge/${currentKB.value.id}/download`
-    const loading = ElMessage({
-      message: '正在准备下载文件...',
-      type: 'info',
-      duration: 0,
-      showClose: true
-    })
+    const loading = showInfoNotification('正在准备下载文件...', { duration: 0 })
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -760,10 +746,10 @@ const downloadAllFilesInKB = async () => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
     loading.close()
-    ElMessage.success('开始下载知识库文件压缩包')
+    showSuccessNotification('开始下载知识库文件压缩包')
   } catch (error) {
     console.error('下载知识库文件压缩包错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
@@ -827,18 +813,17 @@ const handleFileChange = async (event) => {
     const fileArray = Array.from(files)
     const response = await addFilesToKnowledgeBase(editingKB.value.id, fileArray)
     if (response && response.success) {
-      ElMessage.success(response.message || '文件添加成功')
+      showSuccessNotification(response.message || '文件添加成功')
       const detail = await getKnowledgeBaseDetail(editingKB.value.id)
       if (detail && detail.success) {
         const data = detail.data || {}
         fileList.value = data.files || []
       }
     } else {
-      ElMessage.error((response && response.message) || '添加文件失败')
+      showErrorNotification((response && response.message) || '添加文件失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '添加文件失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '添加文件失败')
   } finally {
     if (event.target) {
       event.target.value = ''
@@ -875,7 +860,7 @@ const deleteFile = async (file) => {
     const response = await deleteFileFromKnowledgeBase(editingKB.value.id, file.file_id)
     if (response && response.success) {
       const message = response.message || '文件删除成功'
-      ElMessage.success(message)
+      showSuccessNotification(message)
       if (message.includes('知识库已自动删除')) {
         editDialogVisible.value = false
         fetchKnowledge()
@@ -887,11 +872,10 @@ const deleteFile = async (file) => {
         }
       }
     } else {
-      ElMessage.error((response && response.message) || '删除文件失败')
+      showErrorNotification((response && response.message) || '删除文件失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '删除文件失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '删除文件失败')
   }
 }
 
@@ -921,10 +905,10 @@ const downloadKBFile = async (file) => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success(`开始下载文件: ${file.original_name}`)
+    showSuccessNotification(`开始下载文件: ${file.original_name}`)
   } catch (error) {
     console.error('下载单个文件错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 

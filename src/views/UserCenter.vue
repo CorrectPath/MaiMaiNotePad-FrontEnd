@@ -138,9 +138,9 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { changePassword, uploadAvatar, deleteAvatar } from '@/api/user'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 
 const passwordFormRef = ref()
@@ -202,8 +202,7 @@ const fetchUserInfo = async () => {
   try {
     await userStore.fetchCurrentUser(true)
   } catch (error) {
-    const errorMessage = handleApiError(error, '获取用户信息失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '获取用户信息失败，请检查网络连接')
   }
 }
 
@@ -223,14 +222,13 @@ const handleAvatarChange = async (event) => {
   try {
     const response = await uploadAvatar(file)
     if (response.success) {
-      ElMessage.success(response.message || '头像上传成功')
+      showSuccessNotification(response.message || '头像上传成功')
       await fetchUserInfo()
     } else {
-      ElMessage.error(response.message || '头像上传失败')
+      showErrorNotification(response.message || '头像上传失败')
     }
   } catch (error) {
-    const errorMessage = handleApiError(error, '头像上传失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '头像上传失败，请检查网络连接')
   } finally {
     isAvatarUploading.value = false
     event.target.value = ''
@@ -251,14 +249,13 @@ const handleDeleteAvatar = () => {
       try {
         const response = await deleteAvatar()
         if (response.success) {
-          ElMessage.success(response.message || '头像已删除')
+          showSuccessNotification(response.message || '头像已删除')
           await fetchUserInfo()
         } else {
-          ElMessage.error(response.message || '删除头像失败')
+          showErrorNotification(response.message || '删除头像失败')
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '删除头像失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '删除头像失败，请检查网络连接')
       } finally {
         isAvatarDeleting.value = false
       }
@@ -277,7 +274,7 @@ const handleChangePassword = async () => {
           passwordForm.confirm_password
         )
         if (response.success) {
-          ElMessage.success(response.message || '密码修改成功，请重新登录')
+          showSuccessNotification(response.message || '密码修改成功，请重新登录')
           ElMessageBox.alert('密码已修改，请使用新密码重新登录。', '提示', {
             confirmButtonText: '确定',
             callback: () => {
@@ -287,11 +284,10 @@ const handleChangePassword = async () => {
             }
           })
         } else {
-          ElMessage.error(response.message || '密码修改失败')
+          showErrorNotification(response.message || '密码修改失败')
         }
       } catch (error) {
-        const errorMessage = handleApiError(error, '密码修改失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '密码修改失败，请检查网络连接')
       }
     } else {
       return false

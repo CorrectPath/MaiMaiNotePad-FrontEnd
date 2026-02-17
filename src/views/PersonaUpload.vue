@@ -132,10 +132,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { uploadPersonaCard } from '@/api/persona'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
 
 const router = useRouter()
 
@@ -176,11 +175,11 @@ const handleFileChange = (file, files) => {
     }
     const lowerName = raw.name.toLowerCase()
     if (!lowerName.endsWith('.toml')) {
-      ElMessage.error(`不支持的文件类型: ${raw.name}，仅支持 .toml 文件`)
+      showErrorNotification(`不支持的文件类型: ${raw.name}，仅支持 .toml 文件`)
       continue
     }
     if (typeof raw.size === 'number' && raw.size > MAX_PERSONA_FILE_SIZE_BYTES) {
-      ElMessage.error(`文件过大: ${raw.name}，单个文件不超过 ${MAX_PERSONA_FILE_SIZE_MB}MB`)
+      showErrorNotification(`文件过大: ${raw.name}，单个文件不超过 ${MAX_PERSONA_FILE_SIZE_MB}MB`)
       continue
     }
     validFiles.push(item)
@@ -189,7 +188,7 @@ const handleFileChange = (file, files) => {
     }
   }
   if (!validFiles.length && files.length) {
-    ElMessage.error('请选择 1 个符合要求的 .toml 文件，文件名必须为 bot_config.toml')
+    showErrorNotification('请选择 1 个符合要求的 .toml 文件，文件名必须为 bot_config.toml')
   }
   fileList.value = validFiles
 }
@@ -274,7 +273,7 @@ const handleSubmit = () => {
       return
     }
     if (!fileList.value.length) {
-      ElMessage.error('请先选择一个 bot_config.toml 配置文件')
+      showErrorNotification('请先选择一个 bot_config.toml 配置文件')
       return
     }
     submitting.value = true
@@ -282,15 +281,14 @@ const handleSubmit = () => {
       const formData = buildFormData()
       const response = await uploadPersonaCard(formData)
       if (response.success) {
-        ElMessage.success(response.message || '人设卡创建成功')
+        showSuccessNotification(response.message || '人设卡创建成功')
         resetForm()
         router.push('/my-persona')
       } else {
-        ElMessage.error(response.message || '人设卡创建失败')
+        showErrorNotification(response.message || '人设卡创建失败')
       }
     } catch (error) {
-      const message = handleApiError(error, '人设卡创建失败')
-      ElMessage.error(message)
+      showApiErrorNotification(error, '人设卡创建失败')
     } finally {
       submitting.value = false
     }

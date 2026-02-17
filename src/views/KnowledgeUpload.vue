@@ -132,10 +132,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage } from 'element-plus'
 import { UploadFilled } from '@element-plus/icons-vue'
 import { uploadKnowledgeBase } from '@/api/knowledge'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
 
 const router = useRouter()
 
@@ -239,23 +238,23 @@ const handleFileChange = async (file, files) => {
         try {
           parsed = JSON.parse(text)
         } catch (e) {
-          ElMessage.error(`JSON 文件解析失败: ${raw.name}`)
+          showErrorNotification(`JSON 文件解析失败: ${raw.name}`)
           continue
         }
         const errorMessage = validateKnowledgeJsonStructure(parsed)
         if (errorMessage) {
-          ElMessage.error(`JSON 文件结构不符合要求: ${raw.name}，${errorMessage}`)
+          showErrorNotification(`JSON 文件结构不符合要求: ${raw.name}，${errorMessage}`)
           continue
         }
       } catch (e) {
-        ElMessage.error(`读取文件失败: ${raw.name}`)
+        showErrorNotification(`读取文件失败: ${raw.name}`)
         continue
       }
     }
     validFiles.push(item)
   }
   if (validFiles.length === 0 && files.length > 0) {
-    ElMessage.error('所有选择的 JSON 文件均未通过结构校验，请检查后重新上传')
+    showErrorNotification('所有选择的 JSON 文件均未通过结构校验，请检查后重新上传')
   }
   fileList.value = validFiles
 }
@@ -340,7 +339,7 @@ const handleSubmit = () => {
       return
     }
     if (!fileList.value.length) {
-      ElMessage.error('请至少选择一个文件')
+      showErrorNotification('请至少选择一个文件')
       return
     }
     submitting.value = true
@@ -348,15 +347,14 @@ const handleSubmit = () => {
       const formData = buildFormData()
       const response = await uploadKnowledgeBase(formData)
       if (response.success) {
-        ElMessage.success(response.message || '知识库上传成功')
+        showSuccessNotification(response.message || '知识库上传成功')
         resetForm()
         router.push('/my-knowledge')
       } else {
-        ElMessage.error(response.message || '知识库上传失败')
+        showErrorNotification(response.message || '知识库上传失败')
       }
     } catch (error) {
-      const message = handleApiError(error, '知识库上传失败')
-      ElMessage.error(message)
+      showApiErrorNotification(error, '知识库上传失败')
     } finally {
       submitting.value = false
     }

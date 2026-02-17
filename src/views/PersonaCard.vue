@@ -311,11 +311,11 @@
 import { ref, reactive, onMounted } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Star, StarFilled, Download, View } from '@element-plus/icons-vue'
-import { ElMessage, ElAvatar, ElIcon } from 'element-plus'
+import { ElAvatar, ElIcon } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import CommentSection from '@/components/CommentSection.vue'
 import { getPublicPersonaCards, starPersonaCard, unstarPersonaCard, getPersonaCardDetail, checkPersonaCardStarred } from '@/api/persona'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
 import { usePersonaStore } from '@/stores/persona'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
@@ -363,22 +363,18 @@ const getPersonaCards = async () => {
     
     const response = await getPublicPersonaCards(params)
     if (response.success) {
-      // 处理返回的数据
       personaCards.value = response.data.map(card => ({
         ...card,
-        isStarred: false // 初始化收藏状态
+        isStarred: false
       }))
       pagination.total = response.total
-      
-      // 检查每个人设卡的收藏状态
       await checkAllStarStatus()
     } else {
-      ElMessage.error(response.message || '获取人设卡列表失败')
+      showErrorNotification(response.message || '获取人设卡列表失败')
     }
   } catch (error) {
     console.error('获取人设卡列表错误:', error)
-    const errorMessage = handleApiError(error, '获取人设卡列表失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '获取人设卡列表失败，请检查网络连接')
   }
 }
 
@@ -432,29 +428,25 @@ const toggleStar = async (card) => {
   try {
     let response
     if (card.isStarred) {
-      // 取消Star
       response = await unstarPersonaCard(card.id)
     } else {
-      // Star
       response = await starPersonaCard(card.id)
     }
     
     if (response.success) {
       card.isStarred = !card.isStarred
-      // 更新收藏数
       if (card.isStarred) {
         card.star_count++
       } else {
         card.star_count--
       }
-      ElMessage.success(card.isStarred ? '收藏成功' : '取消收藏成功')
+      showSuccessNotification(card.isStarred ? '收藏成功' : '取消收藏成功')
     } else {
-      ElMessage.error(response.message || (card.isStarred ? '取消收藏失败' : '收藏失败'))
+      showErrorNotification(response.message || (card.isStarred ? '取消收藏失败' : '收藏失败'))
     }
   } catch (error) {
     console.error('Star操作错误:', error)
-    const errorMessage = handleApiError(error, '操作失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '操作失败，请检查网络连接')
   }
 }
 
@@ -467,12 +459,11 @@ const showCardDetail = async (card) => {
       selectedCard.value = response.data
       dialogVisible.value = true
     } else {
-      ElMessage.error(response.message || '获取人设卡详情失败')
+      showErrorNotification(response.message || '获取人设卡详情失败')
     }
   } catch (error) {
     console.error('获取人设卡详情错误:', error)
-    const errorMessage = handleApiError(error, '获取人设卡详情失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '获取人设卡详情失败，请检查网络连接')
   }
 }
 
@@ -480,7 +471,7 @@ const showCardDetail = async (card) => {
 const downloadFile = async (file) => {
   try {
     if (!selectedCard.value || !selectedCard.value.id) {
-      ElMessage.error('未找到要下载的人设卡')
+      showErrorNotification('未找到要下载的人设卡')
       return
     }
     const downloadUrl = `${apiBase}/persona/${selectedCard.value.id}/file/${file.file_id}`
@@ -498,10 +489,7 @@ const downloadFile = async (file) => {
       throw new Error('下载失败，HTTP状态码: ' + response.status + ', 响应文本: ' + await response.text())
     }
     
-    // 将响应转换为blob对象
     const blob = await response.blob()
-    
-    // 创建下载链接
     const url = window.URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
@@ -509,14 +497,12 @@ const downloadFile = async (file) => {
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
-    
-    // 释放URL对象
     window.URL.revokeObjectURL(url)
     
-    ElMessage.success(`开始下载文件: ${file.original_name}`)
+    showSuccessNotification(`开始下载文件: ${file.original_name}`)
   } catch (error) {
     console.error('下载单个文件错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
@@ -539,11 +525,11 @@ const isPreviewableFile = (file) => {
 
 const previewFile = async (file) => {
   if (!selectedCard.value || !selectedCard.value.id) {
-    ElMessage.error('未找到要预览的人设卡')
+    showErrorNotification('未找到要预览的人设卡')
     return
   }
   if (!isPreviewableFile(file)) {
-    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    showWarningNotification('当前文件类型暂不支持在线预览，请使用下载功能查看')
     return
   }
   const name = file.original_name || ''
@@ -571,7 +557,7 @@ const previewFile = async (file) => {
     fileViewerContent.value = text
   } catch (error) {
     console.error('预览文件错误:', error)
-    ElMessage.error('预览失败: ' + error.message)
+    showErrorNotification('预览失败: ' + error.message)
     fileViewerVisible.value = false
   } finally {
     fileViewerLoading.value = false

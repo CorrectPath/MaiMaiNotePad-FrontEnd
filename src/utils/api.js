@@ -1,3 +1,16 @@
+import { ElNotification } from 'element-plus'
+
+const baseNotification = (type, message, options = {}) => {
+  return ElNotification({
+    type,
+    message,
+    position: 'bottom-left',
+    duration: 4000,
+    showClose: true,
+    ...options
+  })
+}
+
 export const handleApiResponse = (response, successCallback, errorCallback) => {
   if (response.success) {
     if (successCallback) {
@@ -47,6 +60,27 @@ export const handleApiError = (error, defaultMessage = '请求失败') => {
   }
 
   return message
+}
+
+export const showApiErrorNotification = (error, defaultMessage = '请求失败') => {
+  const message = handleApiError(error, defaultMessage)
+  return baseNotification('error', message)
+}
+
+export const showErrorNotification = (message, options = {}) => {
+  return baseNotification('error', message, options)
+}
+
+export const showSuccessNotification = (message, options = {}) => {
+  return baseNotification('success', message, options)
+}
+
+export const showWarningNotification = (message, options = {}) => {
+  return baseNotification('warning', message, options)
+}
+
+export const showInfoNotification = (message, options = {}) => {
+  return baseNotification('info', message, options)
 }
 
 export const formatFileSize = (size) => {

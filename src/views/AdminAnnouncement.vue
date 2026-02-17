@@ -72,10 +72,9 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
 import { sendMessage } from '@/api/messages'
 import { getAdminUsers } from '@/api/admin'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
 
 const formRef = ref(null)
 
@@ -146,7 +145,7 @@ const handleSubmit = async () => {
     } else if (form.scope === 'admins') {
       const recipientIds = await loadRecipientsByRole('admin')
       if (!recipientIds.length) {
-        ElMessage.warning('当前没有管理员账号可发送')
+        showWarningNotification('当前没有管理员账号可发送')
         submitting.value = false
         return
       }
@@ -154,7 +153,7 @@ const handleSubmit = async () => {
     } else if (form.scope === 'moderators') {
       const recipientIds = await loadRecipientsByRole('moderator')
       if (!recipientIds.length) {
-        ElMessage.warning('当前没有审核员账号可发送')
+        showWarningNotification('当前没有审核员账号可发送')
         submitting.value = false
         return
       }
@@ -162,10 +161,10 @@ const handleSubmit = async () => {
     }
 
     await sendMessage(payload)
-    ElMessage.success('公告已发布')
+    showSuccessNotification('公告已发布')
     handleReset()
   } catch (error) {
-    handleApiError(error, '发布公告失败')
+    showApiErrorNotification(error, '发布公告失败')
   } finally {
     submitting.value = false
   }
@@ -237,4 +236,3 @@ const handleReset = () => {
   gap: 12px;
 }
 </style>
-

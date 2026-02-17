@@ -251,13 +251,13 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { ElMessage, ElAvatar, ElIcon } from 'element-plus'
+import { ElAvatar, ElIcon } from 'element-plus'
 import { StarFilled, Download, View } from '@element-plus/icons-vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import CommentSection from '@/components/CommentSection.vue'
 import { getUserStars } from '@/api/user'
 import { unstarKnowledgeBase } from '@/api/knowledge'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification } from '@/utils/api'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
@@ -307,11 +307,10 @@ const fetchFavorites = async () => {
         pagination.total = favoriteList.value.length
       }
     } else {
-      ElMessage.error((response && response.message) || '获取收藏知识库失败')
+      showErrorNotification((response && response.message) || '获取收藏知识库失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取收藏知识库失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取收藏知识库失败')
   } finally {
     loading.value = false
   }
@@ -354,18 +353,17 @@ const handleUnstarFromDetail = async () => {
   try {
     const response = await unstarKnowledgeBase(selectedKB.value.id)
     if (response && response.success) {
-      ElMessage.success(response.message || '取消收藏成功')
+      showSuccessNotification(response.message || '取消收藏成功')
       favoriteList.value = favoriteList.value.filter((item) => item.id !== selectedKB.value.id)
       if (pagination.total > 0) {
         pagination.total -= 1
       }
       detailVisible.value = false
     } else {
-      ElMessage.error((response && response.message) || '取消收藏失败')
+      showErrorNotification((response && response.message) || '取消收藏失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '取消收藏失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '取消收藏失败')
   }
 }
 
@@ -430,7 +428,7 @@ const formatFileSize = (size) => {
 
 const downloadFile = async (file) => {
   if (!selectedKB.value || !selectedKB.value.id) {
-    ElMessage.error('未找到要下载的知识库')
+    showErrorNotification('未找到要下载的知识库')
     return
   }
   try {
@@ -455,26 +453,21 @@ const downloadFile = async (file) => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success(`开始下载文件: ${file.original_name}`)
+    showSuccessNotification(`开始下载文件: ${file.original_name}`)
   } catch (error) {
     console.error('下载单个文件错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
 const downloadAllFiles = async () => {
   try {
     if (!selectedKB.value || !selectedKB.value.id) {
-      ElMessage.error('未找到要下载的知识库')
+      showErrorNotification('未找到要下载的知识库')
       return
     }
     const downloadUrl = `${apiBase}/knowledge/${selectedKB.value.id}/download`
-    const loading = ElMessage({
-      message: '正在准备下载文件...',
-      type: 'info',
-      duration: 0,
-      showClose: true
-    })
+    const loading = showInfoNotification('正在准备下载文件...', { duration: 0 })
     const response = await fetch(downloadUrl, {
       method: 'GET',
       credentials: 'include',
@@ -507,10 +500,10 @@ const downloadAllFiles = async () => {
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
     loading.close()
-    ElMessage.success('开始下载知识库文件压缩包')
+    showSuccessNotification('开始下载知识库文件压缩包')
   } catch (error) {
     console.error('下载知识库文件压缩包错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
@@ -533,11 +526,11 @@ const isPreviewableFile = (file) => {
 
 const previewFile = async (file) => {
   if (!selectedKB.value || !selectedKB.value.id) {
-    ElMessage.error('未找到要预览的知识库')
+    showErrorNotification('未找到要预览的知识库')
     return
   }
   if (!isPreviewableFile(file)) {
-    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    showErrorNotification('当前文件类型暂不支持在线预览，请使用下载功能查看')
     return
   }
   const name = file.original_name || ''
@@ -565,7 +558,7 @@ const previewFile = async (file) => {
     fileViewerContent.value = text
   } catch (error) {
     console.error('预览文件错误:', error)
-    ElMessage.error('预览失败: ' + error.message)
+    showErrorNotification('预览失败: ' + error.message)
     fileViewerVisible.value = false
   } finally {
     fileViewerLoading.value = false

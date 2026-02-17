@@ -77,9 +77,8 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock, Message, CircleCheck } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
 import { register, sendVerificationCode as sendVerificationCodeApi, checkRegisterLegality } from '@/api/user'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
 
 const router = useRouter()
 const registerFormRef = ref()
@@ -145,12 +144,12 @@ const registerRules = {
 
 const sendVerificationCode = async () => {
   if (!registerForm.username) {
-    ElMessage.warning('请先输入用户名')
+    showWarningNotification('请先输入用户名')
     return
   }
 
   if (!registerForm.emailLocal) {
-    ElMessage.warning('请先输入邮箱前缀')
+    showWarningNotification('请先输入邮箱前缀')
     return
   }
 
@@ -158,20 +157,20 @@ const sendVerificationCode = async () => {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(fullEmail)) {
-    ElMessage.warning('请输入有效的邮箱地址')
+    showWarningNotification('请输入有效的邮箱地址')
     return
   }
 
   try {
     const checkResponse = await checkRegisterLegality(registerForm.username, fullEmail)
     if (!checkResponse.success) {
-      ElMessage.error(checkResponse.message || '注册信息不合法，请检查用户名和邮箱')
+      showErrorNotification(checkResponse.message || '注册信息不合法，请检查用户名和邮箱')
       return
     }
 
     const response = await sendVerificationCodeApi(fullEmail)
     if (response.success) {
-      ElMessage.success('验证码发送成功')
+      showSuccessNotification('验证码发送成功')
       
       // 开始倒计时
       countdown.value = 60
@@ -182,12 +181,11 @@ const sendVerificationCode = async () => {
         }
       }, 1000)
     } else {
-      ElMessage.error(response.message || '验证码发送失败')
+      showErrorNotification(response.message || '验证码发送失败')
     }
   } catch (error) {
     console.error('发送验证码错误:', error)
-    const errorMessage = handleApiError(error, '验证码发送失败，请检查网络连接')
-    ElMessage.error(errorMessage)
+    showApiErrorNotification(error, '验证码发送失败，请检查网络连接')
   }
 }
 
@@ -205,7 +203,7 @@ const handleRegister = async () => {
         )
         
         if (response.success) {
-          ElMessage.success('注册成功')
+          showSuccessNotification('注册成功')
           
           // 跳转到登录页，并自动填入注册信息
           router.push({
@@ -216,12 +214,11 @@ const handleRegister = async () => {
             }
           })
         } else {
-          ElMessage.error(response.message || '注册失败')
+          showErrorNotification(response.message || '注册失败')
         }
       } catch (error) {
         console.error('注册错误:', error)
-        const errorMessage = handleApiError(error, '注册失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        showApiErrorNotification(error, '注册失败，请检查网络连接')
       }
     } else {
       return false

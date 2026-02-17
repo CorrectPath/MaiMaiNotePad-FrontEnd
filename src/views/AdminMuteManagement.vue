@@ -198,9 +198,9 @@
 
 <script setup>
 import { reactive, ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import { getAdminUsers, muteUser, unmuteUser } from '@/api/admin'
-import { handleApiError } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showInfoNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
 
 const loading = ref(false)
 const userList = ref([])
@@ -260,8 +260,7 @@ const fetchUserList = async () => {
     userList.value = items
     pagination.total = typeof total === 'number' ? total : 0
   } catch (error) {
-    const message = handleApiError(error, '获取用户列表失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取用户列表失败')
   } finally {
     loading.value = false
   }
@@ -328,18 +327,17 @@ const handleConfirmMute = async () => {
       ? muteReason.value.map((item) => String(item || '').trim()).filter(Boolean)
       : []
     if (!reasons.length) {
-      ElMessage.warning('请至少选择或输入一个禁言原因')
+      showWarningNotification('请至少选择或输入一个禁言原因')
       muteSubmitting.value = false
       return
     }
     const reasonText = reasons.join('；')
     await muteUser(muteTargetUser.value.id, muteDuration.value, reasonText)
-    ElMessage.success('用户已禁言')
+    showSuccessNotification('用户已禁言')
     muteDialogVisible.value = false
     fetchUserList()
   } catch (error) {
-    const message = handleApiError(error, '禁言用户失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '禁言用户失败')
   } finally {
     muteSubmitting.value = false
   }
@@ -362,11 +360,10 @@ const handleUnmute = async (row) => {
   }
   try {
     await unmuteUser(row.id)
-    ElMessage.success('已解除禁言')
+    showSuccessNotification('已解除禁言')
     fetchUserList()
   } catch (error) {
-    const message = handleApiError(error, '解除禁言失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '解除禁言失败')
   }
 }
 
@@ -376,7 +373,7 @@ const handleViewMuteReason = (row) => {
   }
   const reason = (row.muteReason || '').trim()
   if (!reason) {
-    ElMessage.info('暂无禁言原因信息')
+    showInfoNotification('暂无禁言原因信息')
     return
   }
   ElMessageBox.alert(reason, '禁言原因', {

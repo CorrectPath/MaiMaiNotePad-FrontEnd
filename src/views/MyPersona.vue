@@ -285,7 +285,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { Star, Download, Delete, UploadFilled, Edit } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessageBox } from 'element-plus'
 import MyRepoList from '@/components/MyRepoList.vue'
 import FileListTable from '@/components/FileListTable.vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
@@ -297,7 +297,7 @@ import {
   updatePersonaCard,
   addFilesToPersonaCard
 } from '@/api/persona'
-import { handleApiError, formatFileSize, formatDate } from '@/utils/api'
+import { handleApiError, formatFileSize, formatDate, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { usePersonaStore } from '@/stores/persona'
 
@@ -351,8 +351,7 @@ const fetchPersona = async () => {
     try {
       await userStore.fetchCurrentUser()
     } catch (error) {
-      const message = handleApiError(error, '获取用户信息失败')
-      ElMessage.error(message)
+      showApiErrorNotification(error, '获取用户信息失败')
       return
     }
   }
@@ -374,11 +373,10 @@ const fetchPersona = async () => {
       personaList.value = response.data || response.items || []
       pagination.total = response.total || 0
     } else {
-      ElMessage.error(response.message || '获取我的人设卡失败')
+      showErrorNotification(response.message || '获取我的人设卡失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取我的人设卡失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取我的人设卡失败')
   } finally {
     loading.value = false
   }
@@ -446,14 +444,13 @@ const requestPublish = async (pc) => {
       is_pending: true
     })
     if (response && response.success) {
-      ElMessage.success(response.message || '已提交公开申请，等待审核')
+      showSuccessNotification(response.message || '已提交公开申请，等待审核')
       fetchPersona()
     } else {
-      ElMessage.error((response && response.message) || '提交公开申请失败')
+      showErrorNotification((response && response.message) || '提交公开申请失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '提交公开申请失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '提交公开申请失败')
   }
 }
 
@@ -485,20 +482,19 @@ const deletePersona = async (row) => {
   try {
     const response = await deletePersonaCard(row.id)
     if (response.success) {
-      ElMessage.success(response.message || '删除成功')
+      showSuccessNotification(response.message || '删除成功')
       fetchPersona()
     } else {
-      ElMessage.error(response.message || '删除失败')
+      showErrorNotification(response.message || '删除失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '删除人设卡失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '删除人设卡失败')
   }
 }
 
 const openEdit = async (pc) => {
   if (pc.is_public || pc.is_pending) {
-    ElMessage.warning('公开或审核中的人设卡不允许修改基本信息和文件（补充说明仍可编辑）')
+    showErrorNotification('公开或审核中的人设卡不允许修改基本信息和文件（补充说明仍可编辑）')
     return
   }
   try {
@@ -512,11 +508,10 @@ const openEdit = async (pc) => {
       fileList.value = data.files || []
       editDialogVisible.value = true
     } else {
-      ElMessage.error((response && response.message) || '获取人设卡详情失败')
+      showErrorNotification((response && response.message) || '获取人设卡详情失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取人设卡详情失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取人设卡详情失败')
   }
 }
 
@@ -530,11 +525,10 @@ const openDetail = async (pc) => {
       editingRemark.value = false
       detailDrawerVisible.value = true
     } else {
-      ElMessage.error((response && response.message) || '获取人设卡详情失败')
+      showErrorNotification((response && response.message) || '获取人设卡详情失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '获取人设卡详情失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '获取人设卡详情失败')
   }
 }
 
@@ -564,10 +558,10 @@ const downloadPersonaFile = async (personaId, file) => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success(`开始下载文件: ${file.original_name}`)
+    showSuccessNotification(`开始下载文件: ${file.original_name}`)
   } catch (error) {
     console.error('下载单个文件错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
@@ -600,7 +594,7 @@ const openPersonaFileViewer = async (personaId, file) => {
     return
   }
   if (!isPreviewableFile(file)) {
-    ElMessage.warning('当前文件类型暂不支持在线预览，请使用下载功能查看')
+    showErrorNotification('当前文件类型暂不支持在线预览，请使用下载功能查看')
     return
   }
   const name = file.original_name || ''
@@ -628,8 +622,7 @@ const openPersonaFileViewer = async (personaId, file) => {
     const text = await response.text()
     fileViewerContent.value = text
   } catch (error) {
-    const message = handleApiError(error, '预览文件失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '预览文件失败')
     fileViewerVisible.value = false
   } finally {
     fileViewerLoading.value = false
@@ -672,15 +665,14 @@ const saveBasicInfo = async () => {
     }
     const response = await updatePersonaCard(editingPersona.value.id, payload)
     if (response && response.success) {
-      ElMessage.success(response.message || '修改人设卡成功')
+      showSuccessNotification(response.message || '修改人设卡成功')
       editDialogVisible.value = false
       fetchPersona()
     } else {
-      ElMessage.error((response && response.message) || '修改人设卡失败')
+      showErrorNotification((response && response.message) || '修改人设卡失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '修改人设卡失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '修改人设卡失败')
   }
 }
 
@@ -707,34 +699,33 @@ const handleFileChange = async (event) => {
     for (const file of selectedFiles) {
       const lowerName = file.name.toLowerCase()
       if (!lowerName.endsWith('.toml')) {
-        ElMessage.error(`不支持的文件类型: ${file.name}，仅支持 .toml 文件`)
+        showErrorNotification(`不支持的文件类型: ${file.name}，仅支持 .toml 文件`)
         continue
       }
       if (typeof file.size === 'number' && file.size > MAX_PERSONA_FILE_SIZE_BYTES) {
-        ElMessage.error(`文件过大: ${file.name}，单个文件不超过 ${MAX_PERSONA_FILE_SIZE_MB}MB`)
+        showErrorNotification(`文件过大: ${file.name}，单个文件不超过 ${MAX_PERSONA_FILE_SIZE_MB}MB`)
         continue
       }
       validFiles.push(file)
     }
     if (!validFiles.length) {
-      ElMessage.error('请选择符合要求的 .toml 文件')
+      showErrorNotification('请选择符合要求的 .toml 文件')
       return
     }
     const file = validFiles[0]
     const response = await addFilesToPersonaCard(editingPersona.value.id, [file])
     if (response && response.success) {
-      ElMessage.success(response.message || '文件添加成功')
+      showSuccessNotification(response.message || '文件添加成功')
       const detail = await getPersonaCardDetail(editingPersona.value.id)
       if (detail && detail.success) {
         const data = detail.data || {}
         fileList.value = data.files || []
       }
     } else {
-      ElMessage.error((response && response.message) || '添加文件失败')
+      showErrorNotification((response && response.message) || '添加文件失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '添加文件失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '添加文件失败')
   } finally {
     if (event.target) {
       event.target.value = ''
@@ -772,10 +763,10 @@ const downloadEditFile = async (file) => {
     link.click()
     document.body.removeChild(link)
     window.URL.revokeObjectURL(url)
-    ElMessage.success(`开始下载文件: ${file.original_name}`)
+    showSuccessNotification(`开始下载文件: ${file.original_name}`)
   } catch (error) {
     console.error('下载编辑文件错误:', error)
-    ElMessage.error('下载失败: ' + error.message)
+    showErrorNotification('下载失败: ' + error.message)
   }
 }
 
@@ -793,7 +784,7 @@ const saveRemark = async () => {
     }
     const response = await updatePersonaCard(currentPersona.value.id, payload)
     if (response && response.success) {
-      ElMessage.success(response.message || '备注已保存')
+      showSuccessNotification(response.message || '备注已保存')
       currentPersona.value.content = remarkContent.value
       const target = personaList.value.find((item) => item.id === currentPersona.value.id)
       if (target) {
@@ -801,11 +792,10 @@ const saveRemark = async () => {
       }
       editingRemark.value = false
     } else {
-      ElMessage.error((response && response.message) || '保存备注失败')
+      showErrorNotification((response && response.message) || '保存备注失败')
     }
   } catch (error) {
-    const message = handleApiError(error, '保存备注失败')
-    ElMessage.error(message)
+    showApiErrorNotification(error, '保存备注失败')
   }
 }
 
