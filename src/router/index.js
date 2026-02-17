@@ -14,6 +14,7 @@ import KnowledgeUpload from '../views/KnowledgeUpload.vue'
 import KnowledgeReview from '../views/KnowledgeReview.vue'
 import AdminUserManagement from '../views/AdminUserManagement.vue'
 import AdminDashboard from '../views/AdminDashboard.vue'
+import AdminMuteManagement from '../views/AdminMuteManagement.vue'
 import FavoritePersona from '../views/FavoritePersona.vue'
 import FavoriteKnowledge from '../views/FavoriteKnowledge.vue'
 
@@ -149,6 +150,14 @@ const routes = [
         component: AdminUserManagement,
         meta: {
           pageTitle: '用户管理'
+        }
+      },
+      {
+        path: '/admin-mute',
+        name: 'AdminMuteManagement',
+        component: AdminMuteManagement,
+        meta: {
+          pageTitle: '禁言管理'
         }
       },
       {

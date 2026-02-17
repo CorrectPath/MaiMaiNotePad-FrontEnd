@@ -287,6 +287,12 @@
             </el-table-column>
           </el-table>
         </div>
+        <CommentSection
+          v-if="selectedCard && selectedCard.id"
+          target-type="persona"
+          :target-id="selectedCard.id"
+          :owner-id="selectedCard.uploader_id || selectedCard.author_id || ''"
+        />
       </div>
     </el-drawer>
     <FileViewerDialog
@@ -307,6 +313,7 @@ import { storeToRefs } from 'pinia'
 import { Star, StarFilled, Download, View } from '@element-plus/icons-vue'
 import { ElMessage, ElAvatar, ElIcon } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import CommentSection from '@/components/CommentSection.vue'
 import { getPublicPersonaCards, starPersonaCard, unstarPersonaCard, getPersonaCardDetail, checkPersonaCardStarred } from '@/api/persona'
 import { handleApiError } from '@/utils/api'
 import { usePersonaStore } from '@/stores/persona'

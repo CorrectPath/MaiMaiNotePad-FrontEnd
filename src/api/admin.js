@@ -30,6 +30,16 @@ export const unbanUser = (userId) => {
   return apiClient.post(`/admin/users/${userId}/unban`)
 }
 
+export const muteUser = (userId, duration) => {
+  return apiClient.post(`/admin/users/${userId}/mute`, {
+    duration
+  })
+}
+
+export const unmuteUser = (userId) => {
+  return apiClient.post(`/admin/users/${userId}/unmute`)
+}
+
 export const createUserByAdmin = (payload) => {
   return apiClient.post('/admin/users', payload)
 }

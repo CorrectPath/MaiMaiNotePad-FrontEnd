@@ -64,7 +64,7 @@
             <el-icon>
               <Check />
             </el-icon>
-            <span class="menu-label">管理与审核</span>
+            <span class="menu-label">管理</span>
           </template>
           <el-menu-item index="/admin-dashboard">
             <span class="menu-label">运营看板</span>
@@ -77,6 +77,9 @@
           </el-menu-item>
           <el-menu-item index="/admin-users">
             <span class="menu-label">用户管理</span>
+          </el-menu-item>
+          <el-menu-item index="/admin-mute">
+            <span class="menu-label">禁言管理</span>
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -137,30 +140,86 @@
                 </div>
               </div>
               <div class="message-list-body">
-                <div v-if="messageLoading" class="message-loading">
-                  加载中...
-                </div>
-                <div
-                  v-for="msg in messages"
-                  :key="msg.id"
-                  class="message-item"
-                  :class="{ 'is-unread': !msg.is_read }"
-                  @click="handleMessageClick(msg)"
-                >
-                  <div class="message-title-row">
-                    <span class="message-title">{{ msg.title }}</span>
-                    <span v-if="!msg.is_read" class="unread-dot"></span>
-                  </div>
-                  <div class="message-summary">
-                    {{ msg.summary || msg.content }}
-                  </div>
-                  <div class="message-meta">
-                    {{ formatMessageTime(msg.created_at) }}
-                  </div>
-                </div>
-                <div v-if="!messageLoading && messages.length === 0" class="message-empty">
-                  暂无消息
-                </div>
+                <el-tabs v-model="activeMessageTab" class="message-tabs" @tab-change="handleMessageTabChange">
+                  <el-tab-pane label="通知" name="notification">
+                    <div v-if="messageLoading" class="message-loading">
+                      加载中...
+                    </div>
+                    <div
+                      v-for="msg in messages"
+                      :key="msg.id"
+                      class="message-item"
+                      :class="{ 'is-unread': !msg.is_read }"
+                      @click="handleMessageClick(msg)"
+                    >
+                      <div class="message-title-row">
+                        <span class="message-title">{{ msg.title }}</span>
+                        <span v-if="!msg.is_read" class="unread-dot"></span>
+                      </div>
+                      <div class="message-summary">
+                        {{ msg.summary || msg.content }}
+                      </div>
+                      <div class="message-meta">
+                        {{ formatMessageTime(msg.created_at) }}
+                      </div>
+                    </div>
+                    <div v-if="!messageLoading && messages.length === 0" class="message-empty">
+                      暂无消息
+                    </div>
+                  </el-tab-pane>
+                  <el-tab-pane label="点赞" name="like">
+                    <div v-if="likeMessagesLoading" class="message-loading">
+                      加载中...
+                    </div>
+                    <div
+                      v-for="msg in likeMessages"
+                      :key="msg.id"
+                      class="message-item"
+                      :class="{ 'is-unread': !msg.is_read }"
+                      @click="handleMessageClick(msg)"
+                    >
+                      <div class="message-title-row">
+                        <span class="message-title">{{ msg.title }}</span>
+                        <span v-if="!msg.is_read" class="unread-dot"></span>
+                      </div>
+                      <div class="message-summary">
+                        {{ msg.summary || msg.content }}
+                      </div>
+                      <div class="message-meta">
+                        {{ formatMessageTime(msg.created_at) }}
+                      </div>
+                    </div>
+                    <div v-if="!likeMessagesLoading && likeMessages.length === 0" class="message-empty">
+                      暂无点赞消息
+                    </div>
+                  </el-tab-pane>
+                  <el-tab-pane label="评论" name="comment">
+                    <div v-if="commentMessagesLoading" class="message-loading">
+                      加载中...
+                    </div>
+                    <div
+                      v-for="msg in commentMessages"
+                      :key="msg.id"
+                      class="message-item"
+                      :class="{ 'is-unread': !msg.is_read }"
+                      @click="handleMessageClick(msg)"
+                    >
+                      <div class="message-title-row">
+                        <span class="message-title">{{ msg.title }}</span>
+                        <span v-if="!msg.is_read" class="unread-dot"></span>
+                      </div>
+                      <div class="message-summary">
+                        {{ msg.summary || msg.content }}
+                      </div>
+                      <div class="message-meta">
+                        {{ formatMessageTime(msg.created_at) }}
+                      </div>
+                    </div>
+                    <div v-if="!commentMessagesLoading && commentMessages.length === 0" class="message-empty">
+                      暂无评论消息
+                    </div>
+                  </el-tab-pane>
+                </el-tabs>
               </div>
             </div>
           </el-popover>
@@ -329,7 +388,7 @@ const userStore = useUserStore()
 const messageStore = useMessageStore()
 const connectionStore = useConnectionStore()
 const { user, isAdmin } = storeToRefs(userStore)
-const { items: messages, unreadCount } = storeToRefs(messageStore)
+const { items: messages, unreadCount, byType } = storeToRefs(messageStore)
 const { isOnline } = storeToRefs(connectionStore)
 let messagePollTimer = null
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
@@ -337,6 +396,7 @@ const isCollapsed = ref(false)
 const messagePopoverVisible = ref(false)
 const messageDialogVisible = ref(false)
 const selectedMessage = ref(null)
+const activeMessageTab = ref('notification')
 const myDataVisible = ref(false)
 const dashboardLoading = ref(false)
 const dashboardStats = ref(null)
@@ -363,6 +423,11 @@ const hasNextMessage = computed(() => {
   return currentMessageIndex.value >= 0 && currentMessageIndex.value < messages.value.length - 1
 })
 
+const likeMessages = computed(() => byType.value.like.items || [])
+const likeMessagesLoading = computed(() => byType.value.like.loading)
+const commentMessages = computed(() => byType.value.comment.items || [])
+const commentMessagesLoading = computed(() => byType.value.comment.loading)
+
 const resolveAvatarUrl = (userData) => {
   if (!userData || !userData.id) {
     return ''
@@ -388,7 +453,8 @@ const pageTitleMap = {
   '/favorite-knowledge': '收藏知识库',
   '/user-center': '个人中心',
   '/admin-dashboard': '运营看板',
-  '/admin-users': '用户管理'
+  '/admin-users': '用户管理',
+  '/admin-mute': '禁言管理'
 }
 
 const currentPageTitle = computed(() => {
@@ -421,6 +487,14 @@ const handleWebsocketMessage = () => {
 
 const handleMarkAllRead = async () => {
   await messageStore.markAllRead()
+}
+
+const handleMessageTabChange = async (name) => {
+  if (name === 'notification') {
+    await messageStore.fetchMessages()
+  } else {
+    await messageStore.fetchMessagesByType(name)
+  }
 }
 
 const getUserInfo = async () => {
@@ -625,8 +699,21 @@ onUnmounted(() => {
 watch(
   messagePopoverVisible,
   (visible) => {
-    if (visible && messages.value.length === 0 && !messageStore.loading) {
-      messageStore.fetchMessages()
+    if (!visible) {
+      return
+    }
+    if (activeMessageTab.value === 'notification') {
+      if (messages.value.length === 0 && !messageStore.loading) {
+        messageStore.fetchMessages()
+      }
+    } else if (activeMessageTab.value === 'like') {
+      if (!byType.value.like.loaded && !byType.value.like.loading) {
+        messageStore.fetchMessagesByType('like')
+      }
+    } else if (activeMessageTab.value === 'comment') {
+      if (!byType.value.comment.loaded && !byType.value.comment.loading) {
+        messageStore.fetchMessagesByType('comment')
+      }
     }
   }
 )

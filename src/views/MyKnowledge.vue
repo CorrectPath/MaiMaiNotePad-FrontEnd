@@ -258,6 +258,13 @@
             @download="downloadDrawerFile"
           />
         </div>
+
+        <CommentSection
+          v-if="currentKB && currentKB.id"
+          target-type="knowledge"
+          :target-id="currentKB.id"
+          :owner-id="currentKB.uploader_id || currentKB.author_id || ''"
+        />
       </div>
     </el-drawer>
     <FileViewerDialog
@@ -281,6 +288,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import MyRepoList from '@/components/MyRepoList.vue'
 import FileListTable from '@/components/FileListTable.vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import CommentSection from '@/components/CommentSection.vue'
 import {
   getUserKnowledgeBase,
   getKnowledgeBaseDetail,

@@ -259,6 +259,13 @@
             @download="downloadFile"
           />
         </div>
+
+        <CommentSection
+          v-if="currentPersona && currentPersona.id"
+          target-type="persona"
+          :target-id="currentPersona.id"
+          :owner-id="currentPersona.uploader_id || currentPersona.author_id || ''"
+        />
       </div>
     </el-drawer>
     <FileViewerDialog
@@ -282,6 +289,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import MyRepoList from '@/components/MyRepoList.vue'
 import FileListTable from '@/components/FileListTable.vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import CommentSection from '@/components/CommentSection.vue'
 import {
   getUserPersonaCards,
   getPersonaCardDetail,

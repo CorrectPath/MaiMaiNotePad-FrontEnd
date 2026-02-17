@@ -13,6 +13,7 @@
             v-if="item.version"
             size="small"
             type="info"
+            effect="dark"
             class="repo-version-tag"
           >
             v{{ item.version }}
@@ -195,6 +196,9 @@ const handleDeleteClick = (item) => {
 
 .repo-version-tag {
   padding: 0 6px;
+  background-color: var(--secondary-color);
+  color: #303133;
+  border-color: transparent;
 }
 
 .repo-visibility {

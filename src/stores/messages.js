@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { getMessages, markMessageRead } from '@/api/messages'
+import { getMessages, getMessagesByType, markMessageRead } from '@/api/messages'
 import { handleApiError } from '@/utils/api'
 import { ElMessage } from 'element-plus'
 
@@ -9,7 +9,30 @@ export const useMessageStore = defineStore('messages', {
     loading: false,
     loaded: false,
     page: 1,
-    pageSize: 20
+    pageSize: 20,
+    byType: {
+      notification: {
+        items: [],
+        loading: false,
+        loaded: false,
+        page: 1,
+        pageSize: 20
+      },
+      like: {
+        items: [],
+        loading: false,
+        loaded: false,
+        page: 1,
+        pageSize: 20
+      },
+      comment: {
+        items: [],
+        loading: false,
+        loaded: false,
+        page: 1,
+        pageSize: 20
+      }
+    }
   }),
   getters: {
     unreadCount: (state) => state.items.filter((item) => !item.is_read).length
@@ -43,6 +66,34 @@ export const useMessageStore = defineStore('messages', {
     },
     async refreshMessages() {
       await this.fetchMessages(true)
+    },
+    async fetchMessagesByType(type, force = false) {
+      const key = type || 'notification'
+      const bucket = this.byType[key]
+      if (!bucket || bucket.loading) {
+        return
+      }
+      if (bucket.loaded && !force && bucket.items.length) {
+        return
+      }
+      bucket.loading = true
+      try {
+        const response = await getMessagesByType(key === 'notification' ? 'direct' : key === 'like' ? 'reaction' : 'comment', bucket.page, bucket.pageSize)
+        if (response && response.success) {
+          bucket.items = response.data || []
+          bucket.loaded = true
+        } else if (response && response.data) {
+          bucket.items = response.data || []
+          bucket.loaded = true
+        } else {
+          ElMessage.error((response && response.message) || '获取消息列表失败')
+        }
+      } catch (error) {
+        const errorMessage = handleApiError(error, '获取消息列表失败，请检查网络连接')
+        ElMessage.error(errorMessage)
+      } finally {
+        bucket.loading = false
+      }
     },
     async markAllRead() {
       const unreadMessages = this.items.filter((item) => !item.is_read)
@@ -84,4 +135,3 @@ export const useMessageStore = defineStore('messages', {
     }
   }
 })
-

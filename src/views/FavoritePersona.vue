@@ -253,6 +253,13 @@
             </el-table-column>
           </el-table>
         </div>
+
+        <CommentSection
+          v-if="selectedCard && selectedCard.id"
+          target-type="persona"
+          :target-id="selectedCard.id"
+          :owner-id="selectedCard.uploader_id || selectedCard.author_id || ''"
+        />
       </div>
       <template #footer>
         <div class="drawer-footer">
@@ -264,9 +271,6 @@
             >
               取消收藏
             </el-button>
-          </div>
-          <div class="drawer-footer-right">
-            <el-button @click="detailVisible = false">关闭</el-button>
           </div>
         </div>
       </template>
@@ -288,6 +292,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElAvatar, ElIcon } from 'element-plus'
 import { StarFilled, Download, View } from '@element-plus/icons-vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import CommentSection from '@/components/CommentSection.vue'
 import { getUserStars } from '@/api/user'
 import { unstarPersonaCard } from '@/api/persona'
 import { handleApiError } from '@/utils/api'
@@ -684,7 +689,11 @@ onMounted(() => {
 }
 
 .card-version-tag {
+  padding: 0 6px;
   margin-left: 4px;
+  background-color: var(--secondary-color);
+  color: #303133;
+  border-color: transparent;
 }
 
 .card-stats {

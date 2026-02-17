@@ -244,6 +244,12 @@
             </el-table-column>
           </el-table>
         </div>
+        <CommentSection
+          v-if="safeSelectedKB && safeSelectedKB.id"
+          target-type="knowledge"
+          :target-id="safeSelectedKB.id"
+          :owner-id="safeSelectedKB.uploader_id || safeSelectedKB.author_id || ''"
+        />
       </div>
     </el-drawer>
     <FileViewerDialog
@@ -264,6 +270,7 @@ import { storeToRefs } from 'pinia'
 import { Star, StarFilled, Download, View } from '@element-plus/icons-vue'
 import { ElMessage, ElIcon, ElAvatar } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import CommentSection from '@/components/CommentSection.vue'
 import { getPublicKnowledgeBase, starKnowledgeBase, unstarKnowledgeBase, getKnowledgeBaseDetail, checkKnowledgeBaseStarred } from '@/api/knowledge'
 import { handleApiError } from '@/utils/api'
 import { useKnowledgeStore } from '@/stores/knowledge'

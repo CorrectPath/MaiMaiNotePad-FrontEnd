@@ -11,6 +11,15 @@ export const getMessages = (page = 1, pageSize = 20, otherUserId) => {
   return apiClient.get('/messages', { params })
 }
 
+export const getMessagesByType = (messageType, page = 1, pageSize = 20) => {
+  return apiClient.get(`/messages/by-type/${messageType}`, {
+    params: {
+      page,
+      page_size: pageSize
+    }
+  })
+}
+
 export const markMessageRead = (messageId) => {
   return apiClient.post(`/messages/${messageId}/read`)
 }

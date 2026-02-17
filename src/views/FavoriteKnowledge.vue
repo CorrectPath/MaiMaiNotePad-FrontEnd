@@ -215,6 +215,13 @@
             </el-table-column>
           </el-table>
         </div>
+
+        <CommentSection
+          v-if="safeSelectedKB && safeSelectedKB.id"
+          target-type="knowledge"
+          :target-id="safeSelectedKB.id"
+          :owner-id="safeSelectedKB.uploader_id || safeSelectedKB.author_id || ''"
+        />
       </div>
       <template #footer>
         <div class="drawer-footer">
@@ -226,9 +233,6 @@
             >
               取消收藏
             </el-button>
-          </div>
-          <div class="drawer-footer-right">
-            <el-button @click="detailVisible = false">关闭</el-button>
           </div>
         </div>
       </template>
@@ -250,6 +254,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElAvatar, ElIcon } from 'element-plus'
 import { StarFilled, Download, View } from '@element-plus/icons-vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import CommentSection from '@/components/CommentSection.vue'
 import { getUserStars } from '@/api/user'
 import { unstarKnowledgeBase } from '@/api/knowledge'
 import { handleApiError } from '@/utils/api'
