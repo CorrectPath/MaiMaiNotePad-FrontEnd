@@ -62,7 +62,7 @@
           <el-table-column
             prop="role"
             label="角色"
-            width="160"
+            min-width="160"
           >
             <template #default="scope">
               <el-select
@@ -79,7 +79,7 @@
           <el-table-column
             prop="status"
             label="状态"
-            width="150"
+            min-width="150"
             align="center"
             header-align="center"
           >
@@ -107,14 +107,14 @@
           <el-table-column
             prop="knowledgeCount"
             label="知识库数量"
-            width="130"
+            min-width="130"
             align="center"
             header-align="center"
           />
           <el-table-column
             prop="personaCount"
             label="人设卡数量"
-            width="130"
+            min-width="130"
             align="center"
             header-align="center"
           />
@@ -147,7 +147,7 @@
           </el-table-column>
           <el-table-column
             label="操作"
-            width="220"
+            min-width="220"
             fixed="right"
             align="center"
             header-align="center"

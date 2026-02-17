@@ -42,7 +42,6 @@
           v-loading="loading"
           :data="userList"
           border
-          style="width: 100%"
         >
           <el-table-column
             prop="username"
@@ -57,12 +56,12 @@
           <el-table-column
             prop="role"
             label="角色"
-            width="140"
+            min-width="140"
           />
           <el-table-column
             prop="isMuted"
             label="禁言状态"
-            width="140"
+            min-width="140"
             align="center"
             header-align="center"
           >
@@ -75,7 +74,7 @@
           <el-table-column
             prop="mutedUntil"
             label="禁言截止时间"
-            width="200"
+            min-width="200"
             align="center"
             header-align="center"
           >
@@ -88,7 +87,7 @@
           </el-table-column>
           <el-table-column
             label="操作"
-            width="220"
+            min-width="220"
             fixed="right"
             align="center"
             header-align="center"
@@ -424,4 +423,3 @@ onMounted(() => {
   color: var(--muted-text-color);
 }
 </style>
-
