@@ -20,9 +20,10 @@ export const deleteUser = (userId) => {
   return apiClient.delete(`/admin/users/${userId}`)
 }
 
-export const banUser = (userId, duration) => {
+export const banUser = (userId, duration, reason) => {
   return apiClient.post(`/admin/users/${userId}/ban`, {
-    duration
+    duration,
+    reason
   })
 }
 
@@ -30,9 +31,10 @@ export const unbanUser = (userId) => {
   return apiClient.post(`/admin/users/${userId}/unban`)
 }
 
-export const muteUser = (userId, duration) => {
+export const muteUser = (userId, duration, reason) => {
   return apiClient.post(`/admin/users/${userId}/mute`, {
-    duration
+    duration,
+    reason
   })
 }
 

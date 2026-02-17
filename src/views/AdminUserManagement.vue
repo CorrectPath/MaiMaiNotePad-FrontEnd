@@ -145,6 +145,15 @@
               >
                 封禁
               </el-button>
+              <el-button
+                v-if="isUserBanned(scope.row) && scope.row.banReason"
+                type="info"
+                size="small"
+                text
+                @click="handleViewBanReason(scope.row)"
+              >
+                查看
+              </el-button>
             </template>
           </el-table-column>
           </el-table>
@@ -235,6 +244,26 @@
               </el-radio-button>
             </el-radio-group>
           </div>
+          <div class="ban-dialog-reason">
+            <span class="ban-dialog-label">封禁原因</span>
+            <el-select
+              v-model="banReason"
+              multiple
+              filterable
+              allow-create
+              default-first-option
+              :reserve-keyword="false"
+              placeholder="请选择或输入封禁原因"
+              class="ban-reason-select"
+            >
+              <el-option
+                v-for="item in commonBanReasons"
+                :key="item"
+                :label="item"
+                :value="item"
+              />
+            </el-select>
+          </div>
         </div>
         <template #footer>
           <span class="dialog-footer">
@@ -284,6 +313,17 @@ const createForm = reactive({
 const banDialogVisible = ref(false)
 const banTargetUser = ref(null)
 const banDuration = ref('7d')
+
+const commonBanReasons = [
+  '发布垃圾广告或恶意推广',
+  '频繁刷屏影响他人使用',
+  '发布不适宜或违规内容',
+  '恶意攻击或骚扰其他用户',
+  '多次违规或恶意行为',
+  '其他'
+]
+
+const banReason = ref([])
 
 const createRules = {
   username: [
@@ -433,6 +473,7 @@ const handleOpenBanDialog = (row) => {
   }
   banTargetUser.value = row
   banDuration.value = '7d'
+  banReason.value = []
   banDialogVisible.value = true
 }
 
@@ -446,7 +487,15 @@ const handleConfirmBan = async () => {
     return
   }
   try {
-    await banUser(banTargetUser.value.id, banDuration.value)
+    const reasons = Array.isArray(banReason.value)
+      ? banReason.value.map((item) => String(item || '').trim()).filter(Boolean)
+      : []
+    if (!reasons.length) {
+      ElMessage.warning('请至少选择或输入一个封禁原因')
+      return
+    }
+    const reasonText = reasons.join('；')
+    await banUser(banTargetUser.value.id, banDuration.value, reasonText)
     ElMessage.success('用户已封禁')
     handleCloseBanDialog()
     fetchUserList()
@@ -454,6 +503,20 @@ const handleConfirmBan = async () => {
     const message = handleApiError(error, '封禁用户失败')
     ElMessage.error(message)
   }
+}
+
+const handleViewBanReason = (row) => {
+  if (!row) {
+    return
+  }
+  const reason = (row.banReason || '').trim()
+  if (!reason) {
+    ElMessage.info('暂无封禁原因信息')
+    return
+  }
+  ElMessageBox.alert(reason, '封禁原因', {
+    confirmButtonText: '知道了'
+  })
 }
 
 const handleUnbanUser = async (row) => {
@@ -680,6 +743,17 @@ onMounted(() => {
 .ban-dialog-label {
   font-size: 13px;
   color: var(--muted-text-color);
+}
+
+.ban-dialog-reason {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ban-reason-select {
+  width: 100%;
 }
 
 .pagination-section {

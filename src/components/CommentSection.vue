@@ -611,8 +611,20 @@ const handleSubmit = async () => {
       ElMessage.success('评论已发布')
     }
   } catch (error) {
-    const message = handleApiError(error, '发表评论失败')
-    ElMessage.error(message)
+    const response = error && error.response
+    const data = response && response.data
+    const rawMessage =
+      (data && data.message) ||
+      (data && data.error && data.error.message) ||
+      ''
+    if (rawMessage && rawMessage.includes('麦麦')) {
+      await ElMessageBox.alert(rawMessage, '通知', {
+        confirmButtonText: '知道了'
+      })
+    } else {
+      const message = handleApiError(error, '发表评论失败')
+      ElMessage.error(message)
+    }
   } finally {
     submitting.value = false
   }
@@ -659,8 +671,20 @@ const handleSubmitReply = async () => {
       ElMessage.success('回复已发布')
     }
   } catch (error) {
-    const message = handleApiError(error, '发送回复失败')
-    ElMessage.error(message)
+    const response = error && error.response
+    const data = response && response.data
+    const rawMessage =
+      (data && data.message) ||
+      (data && data.error && data.error.message) ||
+      ''
+    if (rawMessage && rawMessage.includes('麦麦')) {
+      await ElMessageBox.alert(rawMessage, '通知', {
+        confirmButtonText: '知道了'
+      })
+    } else {
+      const message = handleApiError(error, '发送回复失败')
+      ElMessage.error(message)
+    }
   } finally {
     submittingReply.value = false
   }

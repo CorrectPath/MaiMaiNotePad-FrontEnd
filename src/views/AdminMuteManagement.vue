@@ -60,7 +60,6 @@
           <el-table-column
             prop="isMuted"
             label="禁言状态"
-            min-width="140"
             align="center"
             header-align="center"
           >
@@ -73,7 +72,6 @@
           <el-table-column
             prop="mutedUntil"
             label="禁言截止时间"
-            min-width="200"
             align="center"
             header-align="center"
           >
@@ -86,7 +84,6 @@
           </el-table-column>
           <el-table-column
             label="操作"
-            min-width="220"
             fixed="right"
             align="center"
             header-align="center"
@@ -109,6 +106,15 @@
                 @click="openMuteDialog(scope.row)"
               >
                 禁言
+              </el-button>
+              <el-button
+                v-if="scope.row.isMuted && scope.row.muteReason"
+                type="info"
+                size="small"
+                text
+                @click="handleViewMuteReason(scope.row)"
+              >
+                查看
               </el-button>
             </template>
           </el-table-column>
@@ -154,6 +160,26 @@
               </el-radio-button>
             </el-radio-group>
           </div>
+          <div class="mute-dialog-reason">
+            <span class="mute-dialog-label">禁言原因</span>
+            <el-select
+              v-model="muteReason"
+              multiple
+              filterable
+              allow-create
+              default-first-option
+              :reserve-keyword="false"
+              placeholder="请选择或输入禁言原因"
+              class="mute-reason-select"
+            >
+              <el-option
+                v-for="item in commonMuteReasons"
+                :key="item"
+                :label="item"
+                :value="item"
+              />
+            </el-select>
+          </div>
         </div>
         <template #footer>
           <span class="dialog-footer">
@@ -194,6 +220,16 @@ const muteDialogVisible = ref(false)
 const muteTargetUser = ref(null)
 const muteDuration = ref('7d')
 const muteSubmitting = ref(false)
+
+const commonMuteReasons = [
+  '发布垃圾广告或恶意推广',
+  '频繁刷屏影响他人使用',
+  '发布不适宜或违规内容',
+  '恶意攻击或骚扰其他用户',
+  '其他'
+]
+
+const muteReason = ref([])
 
 const fetchUserList = async () => {
   loading.value = true
@@ -273,6 +309,7 @@ const formatMutedUntil = (value) => {
 const openMuteDialog = (row) => {
   muteTargetUser.value = row
   muteDuration.value = '7d'
+  muteReason.value = []
   muteDialogVisible.value = true
 }
 
@@ -287,7 +324,16 @@ const handleConfirmMute = async () => {
   }
   muteSubmitting.value = true
   try {
-    await muteUser(muteTargetUser.value.id, muteDuration.value)
+    const reasons = Array.isArray(muteReason.value)
+      ? muteReason.value.map((item) => String(item || '').trim()).filter(Boolean)
+      : []
+    if (!reasons.length) {
+      ElMessage.warning('请至少选择或输入一个禁言原因')
+      muteSubmitting.value = false
+      return
+    }
+    const reasonText = reasons.join('；')
+    await muteUser(muteTargetUser.value.id, muteDuration.value, reasonText)
     ElMessage.success('用户已禁言')
     muteDialogVisible.value = false
     fetchUserList()
@@ -322,6 +368,20 @@ const handleUnmute = async (row) => {
     const message = handleApiError(error, '解除禁言失败')
     ElMessage.error(message)
   }
+}
+
+const handleViewMuteReason = (row) => {
+  if (!row) {
+    return
+  }
+  const reason = (row.muteReason || '').trim()
+  if (!reason) {
+    ElMessage.info('暂无禁言原因信息')
+    return
+  }
+  ElMessageBox.alert(reason, '禁言原因', {
+    confirmButtonText: '知道了'
+  })
 }
 
 onMounted(() => {
@@ -420,5 +480,16 @@ onMounted(() => {
 .mute-dialog-label {
   font-size: 13px;
   color: var(--muted-text-color);
+}
+
+.mute-dialog-reason {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mute-reason-select {
+  width: 100%;
 }
 </style>

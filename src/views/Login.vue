@@ -45,7 +45,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock } from '@element-plus/icons-vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { login } from '@/api/user'
 import { handleApiError } from '@/utils/api'
 
@@ -110,8 +110,20 @@ const handleLogin = async () => {
         }
       } catch (error) {
         console.error('登录错误:', error)
-        const errorMessage = handleApiError(error, '登录失败，请检查网络连接')
-        ElMessage.error(errorMessage)
+        const response = error && error.response
+        const data = response && response.data
+        const rawMessage =
+          (data && data.message) ||
+          (data && data.error && data.error.message) ||
+          ''
+        if (rawMessage && rawMessage.includes('麦麦')) {
+          await ElMessageBox.alert(rawMessage, '通知', {
+            confirmButtonText: '知道了'
+          })
+        } else {
+          const errorMessage = handleApiError(error, '登录失败，请检查网络连接')
+          ElMessage.error(errorMessage)
+        }
       }
     } else {
       return false
