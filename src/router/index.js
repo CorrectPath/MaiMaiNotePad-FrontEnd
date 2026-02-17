@@ -12,6 +12,8 @@ import UserCenter from '../views/UserCenter.vue'
 import ResetPassword from '../views/ResetPassword.vue'
 import KnowledgeUpload from '../views/KnowledgeUpload.vue'
 import KnowledgeReview from '../views/KnowledgeReview.vue'
+import AdminUserManagement from '../views/AdminUserManagement.vue'
+import AdminDashboard from '../views/AdminDashboard.vue'
 import FavoritePersona from '../views/FavoritePersona.vue'
 import FavoriteKnowledge from '../views/FavoriteKnowledge.vue'
 
@@ -131,6 +133,22 @@ const routes = [
         component: PersonaReview,
         meta: {
           pageTitle: '人设卡审核'
+        }
+      },
+      {
+        path: '/admin-dashboard',
+        name: 'AdminDashboard',
+        component: AdminDashboard,
+        meta: {
+          pageTitle: '运营看板'
+        }
+      },
+      {
+        path: '/admin-users',
+        name: 'AdminUserManagement',
+        component: AdminUserManagement,
+        meta: {
+          pageTitle: '用户管理'
         }
       },
       {

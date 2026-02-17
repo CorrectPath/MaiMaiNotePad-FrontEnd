@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { getMyUploadStats, getAdminUploadStats } from '@/api/stats'
+import { getAdminStats } from '@/api/admin'
 import { handleApiError } from '@/utils/api'
 import { ElMessage } from 'element-plus'
 
@@ -10,7 +11,10 @@ export const useStatsStore = defineStore('stats', {
     myStatsLoading: false,
     adminStats: null,
     adminStatsLoaded: false,
-    adminStatsLoading: false
+    adminStatsLoading: false,
+    adminUploadStats: null,
+    adminUploadStatsLoaded: false,
+    adminUploadStatsLoading: false
   }),
   actions: {
     async fetchMyStats(force = false) {
@@ -48,12 +52,15 @@ export const useStatsStore = defineStore('stats', {
       }
       this.adminStatsLoading = true
       try {
-        const response = await getAdminUploadStats()
+        const response = await getAdminStats()
         if (response && response.success && response.data) {
           this.adminStats = response.data
           this.adminStatsLoaded = true
         } else if (response && response.data) {
           this.adminStats = response.data
+          this.adminStatsLoaded = true
+        } else if (response) {
+          this.adminStats = response
           this.adminStatsLoaded = true
         } else {
           ElMessage.error((response && response.message) || '获取系统统计失败')
@@ -64,7 +71,35 @@ export const useStatsStore = defineStore('stats', {
       } finally {
         this.adminStatsLoading = false
       }
+    },
+    async fetchAdminUploadStats(force = false) {
+      if (this.adminUploadStatsLoading) {
+        return
+      }
+      if (this.adminUploadStatsLoaded && !force && this.adminUploadStats) {
+        return
+      }
+      this.adminUploadStatsLoading = true
+      try {
+        const response = await getAdminUploadStats()
+        if (response && response.success && response.data) {
+          this.adminUploadStats = response.data
+          this.adminUploadStatsLoaded = true
+        } else if (response && response.data) {
+          this.adminUploadStats = response.data
+          this.adminUploadStatsLoaded = true
+        } else if (response) {
+          this.adminUploadStats = response
+          this.adminUploadStatsLoaded = true
+        } else {
+          ElMessage.error((response && response.message) || '获取上传统计失败')
+        }
+      } catch (error) {
+        const errorMessage = handleApiError(error, '获取上传统计失败，请检查网络连接')
+        ElMessage.error(errorMessage)
+      } finally {
+        this.adminUploadStatsLoading = false
+      }
     }
   }
 })
-

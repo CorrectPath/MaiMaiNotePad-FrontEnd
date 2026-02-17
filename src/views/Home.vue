@@ -64,13 +64,19 @@
             <el-icon>
               <Check />
             </el-icon>
-            <span class="menu-label">审核列表</span>
+            <span class="menu-label">管理与审核</span>
           </template>
+          <el-menu-item index="/admin-dashboard">
+            <span class="menu-label">运营看板</span>
+          </el-menu-item>
           <el-menu-item index="/knowledge-review">
             <span class="menu-label">知识库审核</span>
           </el-menu-item>
           <el-menu-item index="/persona-review">
             <span class="menu-label">人设卡审核</span>
+          </el-menu-item>
+          <el-menu-item index="/admin-users">
+            <span class="menu-label">用户管理</span>
           </el-menu-item>
         </el-sub-menu>
       </el-menu>
@@ -380,7 +386,9 @@ const pageTitleMap = {
   '/knowledge-review': '知识库审核',
   '/favorite-persona': '收藏人设卡',
   '/favorite-knowledge': '收藏知识库',
-  '/user-center': '个人中心'
+  '/user-center': '个人中心',
+  '/admin-dashboard': '运营看板',
+  '/admin-users': '用户管理'
 }
 
 const currentPageTitle = computed(() => {

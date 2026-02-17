@@ -20,6 +20,16 @@ export const deleteUser = (userId) => {
   return apiClient.delete(`/admin/users/${userId}`)
 }
 
+export const banUser = (userId, duration) => {
+  return apiClient.post(`/admin/users/${userId}/ban`, {
+    duration
+  })
+}
+
+export const unbanUser = (userId) => {
+  return apiClient.post(`/admin/users/${userId}/unban`)
+}
+
 export const createUserByAdmin = (payload) => {
   return apiClient.post('/admin/users', payload)
 }
@@ -53,4 +63,3 @@ export const deleteUploadRecord = (uploadId) => {
 export const reprocessUpload = (uploadId) => {
   return apiClient.post(`/admin/uploads/${uploadId}/reprocess`)
 }
-
