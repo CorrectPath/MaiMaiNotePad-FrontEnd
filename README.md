@@ -34,8 +34,8 @@
 
 ### 用户中心与个人功能
 - 获取当前登录用户信息（`/api/users/me`）
-- 查看个人上传记录与统计（与后端 `/api/me/upload-*` 接口对齐）
-- 查看个人 Star 的知识库与人设卡
+- 在个人中心中查看和修改基础资料、头像与密码
+- 在首页右上角「我的数据」抽屉中查看下载/收藏总览与最近30天趋势
 
 ### 全局布局与导航
 - 左侧整列菜单 + 顶部导航布局
@@ -97,7 +97,7 @@ MaiMaiNotePad-FrontEnd/
 │   │   ├── MyPersona.vue        # 我的人设卡管理
 │   │   ├── PersonaUpload.vue    # 人设卡上传
 │   │   ├── PersonaReview.vue    # 人设卡审核（管理员/审核员）
-│   │   └── UserCenter.vue       # 用户中心
+│   │   └── UserCenter.vue       # 用户中心（个人资料与安全设置）
 │   ├── App.vue              # 根组件
 │   ├── main.js              # 应用入口
 │   └── style.css            # 全局样式
