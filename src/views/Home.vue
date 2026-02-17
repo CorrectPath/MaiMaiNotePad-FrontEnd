@@ -45,6 +45,20 @@
             <span class="menu-label">我的知识库</span>
           </el-menu-item>
         </el-sub-menu>
+        <el-sub-menu index="/favorite-group">
+          <template #title>
+            <el-icon>
+              <StarFilled />
+            </el-icon>
+            <span class="menu-label">收藏</span>
+          </template>
+          <el-menu-item index="/favorite-persona">
+            <span class="menu-label">人设卡</span>
+          </el-menu-item>
+          <el-menu-item index="/favorite-knowledge">
+            <span class="menu-label">知识库</span>
+          </el-menu-item>
+        </el-sub-menu>
         <el-sub-menu v-if="isAdmin" index="/review-group">
           <template #title>
             <el-icon>
@@ -293,7 +307,7 @@
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRouter, useRoute } from 'vue-router'
-import { UserFilled, Collection, Fold, Expand, Bell, RefreshRight, Check } from '@element-plus/icons-vue'
+import { UserFilled, Collection, Fold, Expand, Bell, RefreshRight, Check, StarFilled } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import * as echarts from 'echarts'
 import { handleApiError } from '@/utils/api'
@@ -364,6 +378,8 @@ const pageTitleMap = {
   '/knowledge-base': '知识库广场',
   '/my-knowledge': '我的知识库',
   '/knowledge-review': '知识库审核',
+  '/favorite-persona': '收藏人设卡',
+  '/favorite-knowledge': '收藏知识库',
   '/user-center': '个人中心'
 }
 

@@ -121,8 +121,22 @@
                 {{ tag }}
               </el-tag>
             </div>
-            <div class="card-date">
-              {{ formatDateOnly(kb.updated_at || kb.created_at) }}
+            <div class="card-meta">
+              <span class="card-date">
+                {{ formatDateOnly(kb.updated_at || kb.created_at) }}
+              </span>
+              <span
+                v-if="kb.files && kb.files.length"
+                class="card-file-stat"
+              >
+                · {{ kb.files.length }} 个文件
+              </span>
+              <span
+                v-if="typeof kb.size === 'number'"
+                class="card-file-stat"
+              >
+                · 共 {{ formatFileSize(kb.size) }}
+              </span>
             </div>
           </el-card>
         </div>
@@ -824,9 +838,13 @@ onMounted(() => {
   margin-right: 4px;
 }
 
-.card-date {
+.card-meta {
   font-size: 12px;
   color: var(--muted-text-color);
+}
+
+.card-file-stat {
+  margin-left: 4px;
 }
 
 .card-stats {

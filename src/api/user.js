@@ -104,3 +104,9 @@ export const resetPassword = (email, verification_code, new_password) => {
     }
   })
 }
+
+export const getUserStars = (params = {}) => {
+  return apiClient.get('/user/stars', {
+    params
+  })
+}

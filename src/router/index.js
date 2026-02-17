@@ -12,6 +12,8 @@ import UserCenter from '../views/UserCenter.vue'
 import ResetPassword from '../views/ResetPassword.vue'
 import KnowledgeUpload from '../views/KnowledgeUpload.vue'
 import KnowledgeReview from '../views/KnowledgeReview.vue'
+import FavoritePersona from '../views/FavoritePersona.vue'
+import FavoriteKnowledge from '../views/FavoriteKnowledge.vue'
 
 const routes = [
   {
@@ -89,6 +91,22 @@ const routes = [
         component: MyKnowledge,
         meta: {
           pageTitle: '我的知识库'
+        }
+      },
+      {
+        path: '/favorite-persona',
+        name: 'FavoritePersona',
+        component: FavoritePersona,
+        meta: {
+          pageTitle: '收藏人设卡'
+        }
+      },
+      {
+        path: '/favorite-knowledge',
+        name: 'FavoriteKnowledge',
+        component: FavoriteKnowledge,
+        meta: {
+          pageTitle: '收藏知识库'
         }
       },
       {
