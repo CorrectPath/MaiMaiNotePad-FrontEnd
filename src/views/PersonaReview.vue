@@ -259,8 +259,11 @@ const fetchCurrentUserRole = async () => {
     if (!user.value || !user.value.role) {
       await userStore.fetchCurrentUser()
     }
-    const role = user.value && user.value.role
-    canReview.value = role === 'admin' || role === 'moderator'
+    const current = user.value || {}
+    const role = current.role
+    const flagAdmin = !!current.is_admin
+    const flagModerator = !!current.is_moderator
+    canReview.value = flagAdmin || flagModerator || role === 'admin' || role === 'super_admin' || role === 'moderator'
   } catch (error) {
     showApiErrorNotification(error, '获取用户信息失败')
   }

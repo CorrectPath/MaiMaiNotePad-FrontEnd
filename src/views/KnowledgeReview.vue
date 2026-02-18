@@ -235,8 +235,10 @@ const fetchCurrentUserRole = async () => {
     if (!user.value || !user.value.role) {
       await userStore.fetchCurrentUser()
     }
-    const role = user.value && user.value.role
-    isAdmin.value = role === 'admin'
+    const current = user.value || {}
+    const role = current.role
+    const flagAdmin = !!(current.is_admin || current.is_super_admin)
+    isAdmin.value = flagAdmin || role === 'admin' || role === 'super_admin'
   } catch (error) {
     showApiErrorNotification(error, '获取用户信息失败')
   }

@@ -9,7 +9,16 @@ export const useUserStore = defineStore('user', {
     loaded: false
   }),
   getters: {
-    isAdmin: (state) => state.role === 'admin'
+    isAdmin: (state) => {
+      const user = state.user || {}
+      if (typeof user.is_admin === 'boolean') {
+        return user.is_admin
+      }
+      if (typeof user.is_super_admin === 'boolean') {
+        return user.is_super_admin
+      }
+      return state.role === 'admin' || state.role === 'super_admin'
+    }
   },
   actions: {
     async fetchCurrentUser(force = false) {
@@ -57,4 +66,3 @@ export const useUserStore = defineStore('user', {
     }
   }
 })
-
