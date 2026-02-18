@@ -66,7 +66,6 @@ const loginRules = {
   ]
 }
 
-// 从URL参数中获取注册信息
 const getRegisterInfo = () => {
   const query = router.currentRoute.value.query
   if (query.username && query.password) {
@@ -75,7 +74,6 @@ const getRegisterInfo = () => {
   }
 }
 
-// 从localStorage获取记住的登录信息
 const getRememberedInfo = () => {
   const remembered = localStorage.getItem('rememberedLogin')
   if (remembered) {

@@ -320,7 +320,6 @@ import { usePersonaStore } from '@/stores/persona'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
-// 搜索表单
 const searchForm = reactive({
   name: '',
   uploader_id: '',
@@ -329,17 +328,14 @@ const searchForm = reactive({
   sort_order: 'desc'
 })
 
-// 分页
 const pagination = reactive({
   currentPage: 1,
   pageSize: 12,
   total: 0
 })
 
-// 人设卡列表
 const personaCards = ref([])
 
-// 详情弹窗
 const dialogVisible = ref(false)
 const personaStore = usePersonaStore()
 const { currentPersona: selectedCard } = storeToRefs(personaStore)
@@ -352,7 +348,6 @@ const fileViewerLanguage = ref('')
 const fileViewerLoading = ref(false)
 const fileViewerFile = ref(null)
 
-// 获取人设卡列表
 const getPersonaCards = async () => {
   try {
     const params = {
@@ -378,7 +373,6 @@ const getPersonaCards = async () => {
   }
 }
 
-// 检查所有人设卡的收藏状态
 const checkAllStarStatus = async () => {
   for (const card of personaCards.value) {
     try {
@@ -388,18 +382,15 @@ const checkAllStarStatus = async () => {
       }
     } catch (error) {
       console.error(`检查人设卡收藏状态失败: ${card.id}`, error)
-      // 忽略检查失败的情况，继续检查其他卡
     }
   }
 }
 
-// 搜索方法
 const handleSearch = () => {
   pagination.currentPage = 1
   getPersonaCards()
 }
 
-// 重置搜索
 const resetSearch = () => {
   Object.assign(searchForm, {
     name: '',
@@ -412,7 +403,6 @@ const resetSearch = () => {
   getPersonaCards()
 }
 
-// 分页方法
 const handleSizeChange = (size) => {
   pagination.pageSize = size
   getPersonaCards()
@@ -423,7 +413,6 @@ const handleCurrentChange = (current) => {
   getPersonaCards()
 }
 
-// 切换收藏状态
 const toggleStar = async (card) => {
   try {
     let response
@@ -450,10 +439,8 @@ const toggleStar = async (card) => {
   }
 }
 
-// 显示详情弹窗
 const showCardDetail = async (card) => {
   try {
-    // 调用详情接口获取真实数据
     const response = await getPersonaCardDetail(card.id)
     if (response.success) {
       selectedCard.value = response.data
@@ -467,7 +454,6 @@ const showCardDetail = async (card) => {
   }
 }
 
-// 下载单个文件
 const downloadFile = async (file) => {
   try {
     if (!selectedCard.value || !selectedCard.value.id) {
@@ -476,12 +462,11 @@ const downloadFile = async (file) => {
     }
     const downloadUrl = `${apiBase}/persona/${selectedCard.value.id}/file/${file.file_id}`
     
-    // 使用fetch API获取文件
     const response = await fetch(downloadUrl, {
       method: 'GET',
-      credentials: 'include', // 包含认证信息
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('access_token')}` // 添加token
+        'Authorization': `Bearer ${localStorage.getItem('access_token')}`
       }
     })
     
@@ -595,7 +580,6 @@ const getAuthorDisplay = (item) => {
   return name ? `作者: ${name}` : '作者: 用户已注销'
 }
 
-// 格式化日期
 const formatDate = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
@@ -611,7 +595,6 @@ const formatDateOnly = (dateString) => {
   return date.toLocaleDateString()
 }
 
-// 格式化文件大小
 const formatFileSize = (size) => {
   if (!size || isNaN(size)) {
     return '0 B'

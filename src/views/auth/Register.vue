@@ -172,7 +172,6 @@ const sendVerificationCode = async () => {
     if (response.success) {
       showSuccessNotification('验证码发送成功')
       
-      // 开始倒计时
       countdown.value = 60
       countdownTimer = setInterval(() => {
         countdown.value--
@@ -205,7 +204,6 @@ const handleRegister = async () => {
         if (response.success) {
           showSuccessNotification('注册成功')
           
-          // 跳转到登录页，并自动填入注册信息
           router.push({
             path: '/login',
             query: {
