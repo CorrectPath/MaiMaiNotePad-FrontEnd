@@ -84,19 +84,22 @@ export const showInfoNotification = (message, options = {}) => {
 }
 
 export const formatFileSize = (size) => {
-  if (!size || size <= 0) {
+  if (!size || Number.isNaN(size) || size <= 0) {
     return '0 B'
+  }
+  if (size < 1024) {
+    return `${size} B`
   }
   const kb = size / 1024
   if (kb < 1024) {
-    return `${kb.toFixed(1)} KB`
+    return `${kb.toFixed(2)} KB`
   }
   const mb = kb / 1024
   if (mb < 1024) {
-    return `${mb.toFixed(1)} MB`
+    return `${mb.toFixed(2)} MB`
   }
   const gb = mb / 1024
-  return `${gb.toFixed(1)} GB`
+  return `${gb.toFixed(2)} GB`
 }
 
 export const formatDate = (value) => {
@@ -105,7 +108,7 @@ export const formatDate = (value) => {
   }
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) {
-    return value
+    return ''
   }
   return date.toLocaleString()
 }

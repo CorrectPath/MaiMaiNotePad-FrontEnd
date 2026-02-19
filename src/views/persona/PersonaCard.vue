@@ -315,7 +315,8 @@ import { ElAvatar, ElIcon } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import CommentSection from '@/components/CommentSection.vue'
 import { getPublicPersonaCards, starPersonaCard, unstarPersonaCard, getPersonaCardDetail, checkPersonaCardStarred } from '@/api/persona'
-import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
+import { getAuthorName as sharedGetAuthorName, getAuthorDisplay as sharedGetAuthorDisplay } from '@/utils/author'
 import { usePersonaStore } from '@/stores/persona'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
@@ -347,6 +348,11 @@ const fileViewerContent = ref('')
 const fileViewerLanguage = ref('')
 const fileViewerLoading = ref(false)
 const fileViewerFile = ref(null)
+
+const formatFileSize = sharedFormatFileSize
+const formatDate = sharedFormatDate
+const getAuthorName = sharedGetAuthorName
+const getAuthorDisplay = sharedGetAuthorDisplay
 
 const getPersonaCards = async () => {
   try {
@@ -556,36 +562,6 @@ const downloadFromViewer = async () => {
   await downloadFile(fileViewerFile.value)
 }
 
-const getAuthorName = (item) => {
-  if (!item) {
-    return '用户已注销'
-  }
-  if (item.author) {
-    return item.author
-  }
-  if (item.uploader_name) {
-    return item.uploader_name
-  }
-  if (item.author_id) {
-    return item.author_id
-  }
-  if (item.uploader_id) {
-    return item.uploader_id
-  }
-  return '用户已注销'
-}
-
-const getAuthorDisplay = (item) => {
-  const name = getAuthorName(item)
-  return name ? `作者: ${name}` : '作者: 用户已注销'
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleString()
-}
-
 const formatDateOnly = (dateString) => {
   if (!dateString) return ''
   const date = new Date(dateString)
@@ -593,19 +569,6 @@ const formatDateOnly = (dateString) => {
     return ''
   }
   return date.toLocaleDateString()
-}
-
-const formatFileSize = (size) => {
-  if (!size || isNaN(size)) {
-    return '0 B'
-  }
-  if (size < 1024) {
-    return `${size} B`
-  } else if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(2)} KB`
-  } else {
-    return `${(size / (1024 * 1024)).toFixed(2)} MB`
-  }
 }
 
 const getPCInitial = (name) => {

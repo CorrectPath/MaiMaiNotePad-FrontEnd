@@ -216,8 +216,10 @@ import { ElMessageBox } from 'element-plus'
 import { Download, View } from '@element-plus/icons-vue'
 import ReviewList from '@/components/ReviewList.vue'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
+import { useFileViewer } from '@/composables/useFileViewer'
+import { getAuthorName } from '@/utils/author'
 import { getPendingPersonaReview, approvePersonaCardReview, rejectPersonaCardReview, getPersonaCardDetail } from '@/api/persona'
-import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { usePersonaStore } from '@/stores/persona'
 
@@ -233,13 +235,26 @@ const { currentPersona: selectedCard } = storeToRefs(personaStore)
 
 const detailDialogVisible = ref(false)
 
-const fileViewerVisible = ref(false)
-const fileViewerTitle = ref('')
-const fileViewerFileName = ref('')
-const fileViewerContent = ref('')
-const fileViewerLanguage = ref('')
-const fileViewerLoading = ref(false)
-const fileViewerFile = ref(null)
+const formatDate = sharedFormatDate
+const formatFileSize = sharedFormatFileSize
+
+const {
+  fileViewerVisible,
+  fileViewerTitle,
+  fileViewerFileName,
+  fileViewerContent,
+  fileViewerLanguage,
+  fileViewerLoading,
+  previewFile,
+  downloadFile,
+  downloadFromViewer
+} = useFileViewer({
+  apiBase,
+  resourceLabel: '人设卡',
+  getResourceId: () => (selectedCard.value && selectedCard.value.id) || null,
+  buildPreviewPath: (id, file) => `/persona/${id}/file/${file.file_id}`,
+  buildDownloadPath: (id, file) => `/persona/${id}/file/${file.file_id}`
+})
 
 const searchForm = reactive({
   name: '',
@@ -400,142 +415,6 @@ onMounted(async () => {
   await fetchReviewList()
 })
 
-const getAuthorName = (item) => {
-  if (!item) {
-    return '用户已注销'
-  }
-  if (item.author) {
-    return item.author
-  }
-  if (item.uploader_name) {
-    return item.uploader_name
-  }
-  if (item.author_id) {
-    return item.author_id
-  }
-  if (item.uploader_id) {
-    return item.uploader_id
-  }
-  return '用户已注销'
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) {
-    return ''
-  }
-  const date = new Date(dateString)
-  return date.toLocaleString()
-}
-
-const formatFileSize = (size) => {
-  if (!size || isNaN(size)) {
-    return '0 B'
-  }
-  if (size < 1024) {
-    return `${size} B`
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(2)} KB`
-  }
-  return `${(size / (1024 * 1024)).toFixed(2)} MB`
-}
-
-const downloadFile = async (file) => {
-  if (!selectedCard.value || !selectedCard.value.id) {
-    showErrorNotification('未找到要下载的人设卡')
-    return
-  }
-  try {
-    const downloadUrl = `${apiBase}/persona/${selectedCard.value.id}/file/${file.file_id}`
-    const response = await fetch(downloadUrl, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-      }
-    })
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`下载失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
-    }
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = file.original_name
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-    showSuccessNotification(`开始下载文件: ${file.original_name}`)
-  } catch (error) {
-    showErrorNotification('下载失败: ' + error.message)
-  }
-}
-
-const resolveFileLanguage = (fileName) => {
-  const lower = (fileName || '').toLowerCase()
-  if (lower.endsWith('.toml')) {
-    return 'toml'
-  }
-  if (lower.endsWith('.json')) {
-    return 'json'
-  }
-  return 'txt'
-}
-
-const isPreviewableFile = (file) => {
-  const name = (file && file.original_name) || ''
-  const lower = name.toLowerCase()
-  return lower.endsWith('.toml') || lower.endsWith('.json') || lower.endsWith('.txt')
-}
-
-const previewFile = async (file) => {
-  if (!selectedCard.value || !selectedCard.value.id) {
-    showErrorNotification('未找到要预览的人设卡')
-    return
-  }
-  if (!isPreviewableFile(file)) {
-    showErrorNotification('当前文件类型暂不支持在线预览，请使用下载功能查看')
-    return
-  }
-  const name = file.original_name || ''
-  fileViewerTitle.value = name || '文件预览'
-  fileViewerFileName.value = name
-  fileViewerLanguage.value = resolveFileLanguage(name)
-  fileViewerContent.value = ''
-  fileViewerVisible.value = true
-  fileViewerLoading.value = true
-  fileViewerFile.value = file
-  try {
-    const previewUrl = `${apiBase}/persona/${selectedCard.value.id}/file/${file.file_id}`
-    const response = await fetch(previewUrl, {
-      method: 'GET',
-      credentials: 'include',
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`
-      }
-    })
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`预览失败，HTTP状态码: ${response.status}, 错误信息: ${errorText}`)
-    }
-    const text = await response.text()
-    fileViewerContent.value = text
-  } catch (error) {
-    showErrorNotification('预览失败: ' + error.message)
-    fileViewerVisible.value = false
-  } finally {
-    fileViewerLoading.value = false
-  }
-}
-
-const downloadFromViewer = async () => {
-  if (!fileViewerFile.value) {
-    return
-  }
-  await downloadFile(fileViewerFile.value)
-}
 </script>
 
 <style scoped>

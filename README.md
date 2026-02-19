@@ -80,26 +80,30 @@ MaiMaiNotePad-FrontEnd/
 │   │   ├── messages.js      # 站内消息相关接口
 │   │   └── admin.js         # 管理员与审核相关接口
 │   ├── assets/              # 静态资源
-│   ├── components/          # 通用组件
+│   ├── components/          # 通用组件（如评论组件 CommentSection、审核列表 ReviewList 等）
+│   ├── composables/         # 复用逻辑（如 useFileViewer 统一处理文件预览/下载）
 │   ├── router/
 │   │   └── index.js         # 路由配置
+│   ├── stores/              # Pinia 状态管理（user / knowledge / persona 等）
 │   ├── utils/
-│   │   ├── api.js           # 通用 API 响应/错误处理工具
+│   │   ├── api.js           # 通用 API 响应/错误处理与通知工具
+│   │   ├── author.js        # 作者信息展示工具（getAuthorName / getAuthorDisplay）
 │   │   └── websocket.js     # WebSocket 管理与心跳
 │   ├── views/
-│   │   ├── Home.vue             # 首页 + 消息及在线状态
-│   │   ├── Login.vue            # 登录页
-│   │   ├── Register.vue         # 注册页
-│   │   ├── ResetPassword.vue    # 重置密码
-│   │   ├── KnowledgeBase.vue    # 公共知识库列表与详情
-│   │   ├── MyKnowledge.vue      # 我的知识库管理
-│   │   ├── KnowledgeUpload.vue  # 知识库上传
-│   │   ├── KnowledgeReview.vue  # 知识库审核（管理员/审核员）
-│   │   ├── PersonaCard.vue      # 公共人设卡列表与详情
-│   │   ├── MyPersona.vue        # 我的人设卡管理
-│   │   ├── PersonaUpload.vue    # 人设卡上传
-│   │   ├── PersonaReview.vue    # 人设卡审核（管理员/审核员）
-│   │   └── UserCenter.vue       # 用户中心（个人资料与安全设置）
+│   │   ├── Home.vue                 # 首页 + 消息及在线状态
+│   │   ├── Login.vue                # 登录页
+│   │   ├── Register.vue             # 注册页
+│   │   ├── ResetPassword.vue        # 重置密码
+│   │   ├── KnowledgeBase.vue        # 公共知识库列表与详情
+│   │   ├── MyKnowledge.vue          # 我的知识库管理
+│   │   ├── KnowledgeUpload.vue      # 知识库上传
+│   │   ├── KnowledgeReview.vue      # 知识库审核（管理员/审核员）
+│   │   ├── favorites/               # 收藏视图（知识库收藏 / 人设卡收藏）
+│   │   ├── PersonaCard.vue          # 公共人设卡列表与详情
+│   │   ├── MyPersona.vue            # 我的人设卡管理
+│   │   ├── PersonaUpload.vue        # 人设卡上传
+│   │   ├── PersonaReview.vue        # 人设卡审核（管理员/审核员）
+│   │   └── UserCenter.vue           # 用户中心（个人资料与安全设置）
 │   ├── App.vue              # 根组件
 │   ├── main.js              # 应用入口
 │   └── style.css            # 全局样式
@@ -109,6 +113,36 @@ MaiMaiNotePad-FrontEnd/
 ├── vite.config.js           # Vite 配置（含 /api 代理）
 └── README.md                # 本文档
 ```
+
+---
+
+## 🧑‍💻 开发约定（前端）
+
+为了减少重复代码、保证界面行为一致，新增/修改前端功能时建议遵循以下约定：
+
+- **统一的通知与错误处理**
+  - 使用 `src/utils/api.js` 中的：
+    - `handleApiError` / `showApiErrorNotification` 处理和展示接口错误
+    - `showSuccessNotification` / `showErrorNotification` / `showInfoNotification` 进行统一通知
+  - 在业务组件中不要手写重复的错误提示拼接逻辑。
+
+- **统一的时间与文件大小展示**
+  - 所有「时间」展示（含日期+时间）使用 `formatDate(value)`。
+  - 所有「文件大小」展示使用 `formatFileSize(size)`。
+  - 这两个工具函数均定义在 `src/utils/api.js` 中，已经在知识库、人设卡、收藏、审核等模块统一接入。
+  - 如需只展示日期（不含时分秒），可以在各自页面定义简单的 `formatDateOnly`，但底层仍应基于 `Date` 对象并与 `formatDate` 风格保持一致。
+
+- **统一的作者信息展示**
+  - 获取作者名称请使用 `src/utils/author.js` 中的：
+    - `getAuthorName(item)`
+    - `getAuthorDisplay(item)`（会拼出「作者: xxx」格式）
+  - 知识库、人设卡、收藏、审核等模块已统一接入，新增页面不要再重复定义 `getAuthorName/getAuthorDisplay`。
+
+- **统一的文件预览与下载逻辑**
+  - 任何包含「文件列表 + 预览/下载」的页面（例如知识库、人设卡及其收藏/审核视图），都应优先使用 `src/composables/useFileViewer.js` 提供的 `useFileViewer`：
+    - 由页面传入 `apiBase`、资源类型文案（如“知识库”“人设卡”）、如何获取当前资源 ID 以及预览/下载路径拼接函数；
+    - 页面中只保留业务相关的抽屉/表格结构，把实际的 `fetch` / 权限校验 / 错误处理交给 `useFileViewer`。
+  - 避免在各个页面中复制粘贴预览/下载的 `fetch` 实现，便于未来统一扩展（例如支持更多可预览的文件类型、增加下载统计等）。
 
 ---
 

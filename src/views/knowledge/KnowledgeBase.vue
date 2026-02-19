@@ -273,6 +273,7 @@ import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import CommentSection from '@/components/CommentSection.vue'
 import { getPublicKnowledgeBase, starKnowledgeBase, unstarKnowledgeBase, getKnowledgeBaseDetail, checkKnowledgeBaseStarred } from '@/api/knowledge'
 import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
+import { getAuthorName as sharedGetAuthorName, getAuthorDisplay as sharedGetAuthorDisplay } from '@/utils/author'
 import { useKnowledgeStore } from '@/stores/knowledge'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
@@ -310,6 +311,11 @@ const fileViewerContent = ref('')
 const fileViewerLanguage = ref('')
 const fileViewerLoading = ref(false)
 const fileViewerFile = ref(null)
+
+const formatFileSize = sharedFormatFileSize
+const formatDate = sharedFormatDate
+const getAuthorName = sharedGetAuthorName
+const getAuthorDisplay = sharedGetAuthorDisplay
 
 // 获取知识库列表
 const getKnowledgeBases = async () => {
@@ -602,37 +608,6 @@ const downloadAllFiles = async () => {
   }
 }
 
-const getAuthorName = (item) => {
-  if (!item) {
-    return '用户已注销'
-  }
-  if (item.author) {
-    return item.author
-  }
-  if (item.uploader_name) {
-    return item.uploader_name
-  }
-  if (item.author_id) {
-    return item.author_id
-  }
-  if (item.uploader_id) {
-    return item.uploader_id
-  }
-  return '用户已注销'
-}
-
-const getAuthorDisplay = (item) => {
-  const name = getAuthorName(item)
-  return name ? `作者: ${name}` : '作者: 用户已注销'
-}
-
-// 格式化日期时间（含时间）
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleString()
-}
-
 // 仅格式化日期（不含时分秒）
 const formatDateOnly = (dateString) => {
   if (!dateString) return ''
@@ -641,20 +616,6 @@ const formatDateOnly = (dateString) => {
     return ''
   }
   return date.toLocaleDateString()
-}
-
-// 格式化文件大小
-const formatFileSize = (size) => {
-  if (!size || isNaN(size)) {
-    return '0 B'
-  }
-  if (size < 1024) {
-    return `${size} B`
-  } else if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(2)} KB`
-  } else {
-    return `${(size / (1024 * 1024)).toFixed(2)} MB`
-  }
 }
 
 const getKBInitial = (name) => {

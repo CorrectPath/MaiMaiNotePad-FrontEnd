@@ -259,7 +259,7 @@ import { useFileViewer } from '@/composables/useFileViewer'
 import { getAuthorName, getAuthorDisplay } from '@/utils/author'
 import { getUserStars } from '@/api/user'
 import { unstarKnowledgeBase } from '@/api/knowledge'
-import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
@@ -280,6 +280,9 @@ const detailVisible = ref(false)
 const selectedKB = ref(null)
 
 const safeSelectedKB = computed(() => selectedKB.value || {})
+
+const formatFileSize = sharedFormatFileSize
+const formatDate = sharedFormatDate
 
 const {
   fileViewerVisible,
@@ -379,17 +382,6 @@ const handleUnstarFromDetail = async () => {
   }
 }
 
-const formatDate = (value) => {
-  if (!value) {
-    return ''
-  }
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) {
-    return ''
-  }
-  return date.toLocaleString()
-}
-
 const formatDateOnly = (value) => {
   if (!value) {
     return ''
@@ -399,19 +391,6 @@ const formatDateOnly = (value) => {
     return ''
   }
   return date.toLocaleDateString()
-}
-
-const formatFileSize = (size) => {
-  if (!size || isNaN(size)) {
-    return '0 B'
-  }
-  if (size < 1024) {
-    return `${size} B`
-  }
-  if (size < 1024 * 1024) {
-    return `${(size / 1024).toFixed(2)} KB`
-  }
-  return `${(size / (1024 * 1024)).toFixed(2)} MB`
 }
 
 const downloadAllFiles = async () => {
