@@ -83,6 +83,23 @@ export const showInfoNotification = (message, options = {}) => {
   return baseNotification('info', message, options)
 }
 
+export const normalizeTags = (tags) => {
+  if (!tags) {
+    return []
+  }
+  if (Array.isArray(tags)) {
+    return tags
+  }
+  if (typeof tags === 'string') {
+    const normalized = tags.replace(/，/g, ',')
+    return normalized
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item)
+  }
+  return []
+}
+
 export const formatFileSize = (size) => {
   if (!size || Number.isNaN(size) || size <= 0) {
     return '0 B'

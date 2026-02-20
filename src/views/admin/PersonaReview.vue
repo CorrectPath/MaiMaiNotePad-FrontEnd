@@ -219,7 +219,7 @@ import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import { useFileViewer } from '@/composables/useFileViewer'
 import { getAuthorName } from '@/utils/author'
 import { getPendingPersonaReview, approvePersonaCardReview, rejectPersonaCardReview, getPersonaCardDetail } from '@/api/persona'
-import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate, normalizeTags } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { usePersonaStore } from '@/stores/persona'
 
@@ -305,8 +305,18 @@ const fetchReviewList = async () => {
     }
     const response = await getPendingPersonaReview(params)
     if (response && response.success) {
-      reviewList.value = response.data || []
-      pagination.total = response.total || 0
+      const items = (response.data || []).map((pc) => ({
+        ...pc,
+        tags: normalizeTags(pc.tags)
+      }))
+      reviewList.value = items
+      if (response.pagination && typeof response.pagination.total === 'number') {
+        pagination.total = response.pagination.total
+      } else if (typeof response.total === 'number') {
+        pagination.total = response.total
+      } else {
+        pagination.total = reviewList.value.length
+      }
     } else {
       showErrorNotification((response && response.message) || '获取待审核人设卡失败')
     }
@@ -348,7 +358,9 @@ const showCardDetail = async (pc) => {
   try {
     const response = await getPersonaCardDetail(pc.id)
     if (response && response.success) {
-      selectedCard.value = response.data || {}
+      const data = response.data || {}
+      data.tags = normalizeTags(data.tags)
+      selectedCard.value = data
       detailDialogVisible.value = true
     } else {
       showErrorNotification((response && response.message) || '获取人设卡详情失败')

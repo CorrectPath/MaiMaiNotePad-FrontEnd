@@ -196,22 +196,170 @@
                                 </el-tooltip>
                               </div>
                               <div class="toml-kv-value">
-                                <el-input
-                                  v-if="!isMultiLineValue(item.value)"
-                                  :model-value="item.value"
-                                  size="small"
-                                  readonly
-                                  class="toml-kv-input"
-                                />
-                                <el-input
-                                  v-else
-                                  :model-value="item.value"
-                                  size="small"
-                                  type="textarea"
-                                  readonly
-                                  class="toml-kv-textarea"
-                                  :autosize="{ minRows: 2, maxRows: 6 }"
-                                />
+                                <template
+                                  v-if="block.title === 'expression' && item.key === 'learning_list' && parseLearningList(item.value).length"
+                                >
+                                  <div class="toml-learning-list">
+                                    <div
+                                      v-for="(rule, idx) in parseLearningList(item.value)"
+                                      :key="`${block.index}-${item.key}-learning-${idx}`"
+                                      class="toml-learning-item"
+                                    >
+                                      <div class="toml-learning-row">
+                                        <el-tag size="small" effect="plain">
+                                          {{ rule.scopeLabel }}
+                                        </el-tag>
+                                        <el-tag
+                                          size="small"
+                                          :type="rule.useExpr === 'enable' ? 'success' : 'info'"
+                                        >
+                                          使用表达: {{ rule.useExpr }}
+                                        </el-tag>
+                                        <el-tag
+                                          size="small"
+                                          :type="rule.learnExpr === 'enable' ? 'success' : 'info'"
+                                        >
+                                          学习表达: {{ rule.learnExpr }}
+                                        </el-tag>
+                                        <el-tag
+                                          size="small"
+                                          :type="rule.learnJargon === 'enable' ? 'success' : 'info'"
+                                        >
+                                          jargon: {{ rule.learnJargon }}
+                                        </el-tag>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </template>
+                                <template
+                                  v-else-if="block.title === 'keyword_reaction' && item.key === 'keyword_rules' && parseKeywordRules(item.value).length"
+                                >
+                                  <div class="toml-keyword-rules">
+                                    <div
+                                      v-for="(rule, idx) in parseKeywordRules(item.value)"
+                                      :key="`${block.index}-${item.key}-kw-${idx}`"
+                                      class="toml-keyword-rule"
+                                    >
+                                      <div class="toml-keyword-tags">
+                                        <el-tag
+                                          v-for="kw in rule.keywords"
+                                          :key="kw"
+                                          size="small"
+                                          effect="plain"
+                                          class="toml-keyword-tag"
+                                        >
+                                          {{ kw }}
+                                        </el-tag>
+                                      </div>
+                                      <div
+                                        v-if="rule.reaction"
+                                        class="toml-keyword-reaction"
+                                      >
+                                        {{ rule.reaction }}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </template>
+                                <template
+                                  v-else-if="block.title === 'keyword_reaction' && item.key === 'regex_rules' && parseRegexRules(item.value).length"
+                                >
+                                  <div class="toml-regex-rules">
+                                    <div
+                                      v-for="(rule, idx) in parseRegexRules(item.value)"
+                                      :key="`${block.index}-${item.key}-regex-${idx}`"
+                                      class="toml-regex-rule"
+                                    >
+                                      <div class="toml-regex-patterns">
+                                        <el-tag
+                                          v-for="pattern in rule.patterns"
+                                          :key="pattern"
+                                          size="small"
+                                          effect="plain"
+                                          class="toml-regex-tag"
+                                        >
+                                          {{ pattern }}
+                                        </el-tag>
+                                      </div>
+                                      <div
+                                        v-if="rule.reaction"
+                                        class="toml-keyword-reaction"
+                                      >
+                                        {{ rule.reaction }}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </template>
+                                <template
+                                  v-else-if="block.title === 'experimental' && item.key === 'chat_prompts' && parseChatPrompts(item.value).length"
+                                >
+                                  <div class="toml-chat-prompts">
+                                    <div
+                                      v-for="(prompt, idx) in parseChatPrompts(item.value)"
+                                      :key="`${block.index}-${item.key}-chat-${idx}`"
+                                      class="toml-chat-prompt"
+                                    >
+                                      <div
+                                        v-if="prompt.scope"
+                                        class="toml-chat-scope"
+                                      >
+                                        <el-tag
+                                          size="small"
+                                          effect="plain"
+                                          class="toml-chat-scope-tag"
+                                        >
+                                          {{ prompt.scope }}
+                                        </el-tag>
+                                      </div>
+                                      <div class="toml-chat-content">
+                                        {{ prompt.content }}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </template>
+                                <template v-else>
+                                  <div
+                                    v-if="isBooleanValue(item.value)"
+                                    class="toml-boolean-tag"
+                                  >
+                                    <el-tag
+                                      :type="getBooleanTagType(item.value)"
+                                      size="small"
+                                      effect="plain"
+                                    >
+                                      {{ getBooleanLabel(item.value) }}
+                                    </el-tag>
+                                  </div>
+                                  <div
+                                    v-else-if="isListValue(item.value)"
+                                    class="toml-array-tags"
+                                  >
+                                    <el-tag
+                                      v-for="(entry, idx) in getListEntries(item.value)"
+                                      :key="`${block.index}-${item.key}-${idx}`"
+                                      size="small"
+                                      effect="plain"
+                                      class="toml-array-tag"
+                                    >
+                                      {{ entry }}
+                                    </el-tag>
+                                  </div>
+                                  <el-input
+                                    v-else-if="!isMultiLineValue(item.value)"
+                                    :model-value="getDisplayValue(item.value)"
+                                    size="small"
+                                    readonly
+                                    class="toml-kv-input"
+                                  />
+                                  <el-input
+                                    v-else
+                                    :model-value="getDisplayValue(item.value)"
+                                    size="small"
+                                    type="textarea"
+                                    readonly
+                                    class="toml-kv-textarea"
+                                    :autosize="{ minRows: 2, maxRows: 6 }"
+                                  />
+                                </template>
                               </div>
                             </div>
                           </div>
@@ -829,12 +977,258 @@ const hasVisualPanel = computed(() => {
   return isKnowledgeJson.value || isTomlVisual.value
 })
 
+const getDisplayValue = (value) => {
+  if (value === null || value === undefined) {
+    return ''
+  }
+  const lines = String(value).split(/\r?\n/)
+  let start = 0
+  let end = lines.length - 1
+  while (start <= end && !lines[start].trim()) {
+    start += 1
+  }
+  while (end >= start && !lines[end].trim()) {
+    end -= 1
+  }
+  if (start > end) {
+    return ''
+  }
+  const first = lines[start].trim()
+  const last = lines[end].trim()
+  if (first === '[' && last === ']') {
+    const inner = lines.slice(start + 1, end)
+    return inner.join('\n')
+  }
+  let textLines = lines.slice(start, end + 1)
+  if (
+    (first === '"""' && last === '"""') ||
+    (first === "'''" && last === "'''")
+  ) {
+    if (end <= start + 1) {
+      return ''
+    }
+    textLines = lines.slice(start + 1, end)
+  }
+  let text = textLines.join('\n')
+  let trimmed = text.trim()
+  if (
+    (trimmed.startsWith('"""') && trimmed.endsWith('"""') && trimmed.length >= 6) ||
+    (trimmed.startsWith("'''") && trimmed.endsWith("'''") && trimmed.length >= 6)
+  ) {
+    trimmed = trimmed.slice(3, trimmed.length - 3).trim()
+  }
+  if (
+    (trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length >= 2) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'") && trimmed.length >= 2)
+  ) {
+    trimmed = trimmed.slice(1, trimmed.length - 1)
+  }
+  return trimmed
+}
+
 const isMultiLineValue = (value) => {
+  const text = getDisplayValue(value)
+  if (!text) {
+    return false
+  }
+  return text.includes('\n')
+}
+
+const isListValue = (value) => {
   if (value === null || value === undefined) {
     return false
   }
-  const text = String(value)
-  return text.includes('\n')
+  const text = String(value).trim()
+  if (!text.startsWith('[')) {
+    return false
+  }
+  if (text.includes('{')) {
+    return false
+  }
+  return true
+}
+
+const isBooleanValue = (value) => {
+  const text = getDisplayValue(value).trim().toLowerCase()
+  return text === 'true' || text === 'false'
+}
+
+const getBooleanLabel = (value) => {
+  const text = getDisplayValue(value).trim().toLowerCase()
+  if (text === 'true') {
+    return 'true'
+  }
+  if (text === 'false') {
+    return 'false'
+  }
+  return getDisplayValue(value)
+}
+
+const getBooleanTagType = (value) => {
+  const text = getDisplayValue(value).trim().toLowerCase()
+  if (text === 'true') {
+    return 'success'
+  }
+  if (text === 'false') {
+    return 'info'
+  }
+  return 'info'
+}
+
+const getListEntries = (value) => {
+  if (value === null || value === undefined) {
+    return []
+  }
+  const lines = String(value).split(/\r?\n/)
+  const result = []
+  for (let i = 0; i < lines.length; i += 1) {
+    let line = lines[i]
+    if (!line) {
+      continue
+    }
+    let trimmed = line.trim()
+    if (!trimmed) {
+      continue
+    }
+    if (trimmed === '[' || trimmed === ']') {
+      continue
+    }
+    const hashIndex = trimmed.indexOf('#')
+    if (hashIndex !== -1) {
+      trimmed = trimmed.slice(0, hashIndex).trim()
+    }
+    if (!trimmed) {
+      continue
+    }
+    if (trimmed.endsWith(',')) {
+      trimmed = trimmed.slice(0, -1).trim()
+    }
+    if (!trimmed) {
+      continue
+    }
+    result.push(trimmed)
+  }
+  return result
+}
+
+const parseLearningList = (value) => {
+  const entries = getListEntries(value)
+  const result = []
+  for (let i = 0; i < entries.length; i += 1) {
+    const raw = entries[i]
+    try {
+      const parsed = JSON.parse(raw)
+      if (!Array.isArray(parsed) || parsed.length < 4) {
+        continue
+      }
+      const scope = parsed[0] || ''
+      const useExpr = parsed[1] || ''
+      const learnExpr = parsed[2] || ''
+      const learnJargon = parsed[3] || ''
+      let scopeLabel = scope
+      if (!scopeLabel) {
+        scopeLabel = '全局'
+      }
+      result.push({
+        scope,
+        scopeLabel,
+        useExpr,
+        learnExpr,
+        learnJargon
+      })
+    } catch (error) {}
+  }
+  return result
+}
+
+const parseKeywordRules = (value) => {
+  const text = getDisplayValue(value)
+  if (!text) {
+    return []
+  }
+  const matches = text.match(/\{[^}]*\}/g)
+  if (!matches) {
+    return []
+  }
+  const result = []
+  for (let i = 0; i < matches.length; i += 1) {
+    const block = matches[i]
+    let keywords = []
+    let reaction = ''
+    const keywordsMatch = block.match(/keywords\s*=\s*(\[[^\]]*\])/)
+    if (keywordsMatch) {
+      try {
+        keywords = JSON.parse(keywordsMatch[1])
+      } catch (error) {}
+    }
+    const reactionMatch = block.match(/reaction\s*=\s*"([^"]*)"/)
+    if (reactionMatch) {
+      reaction = reactionMatch[1]
+    }
+    result.push({
+      keywords,
+      reaction
+    })
+  }
+  return result
+}
+
+const parseRegexRules = (value) => {
+  const text = getDisplayValue(value)
+  if (!text) {
+    return []
+  }
+  const matches = text.match(/\{[^}]*\}/g)
+  if (!matches) {
+    return []
+  }
+  const result = []
+  for (let i = 0; i < matches.length; i += 1) {
+    const block = matches[i]
+    let patterns = []
+    let reaction = ''
+    const regexMatch = block.match(/regex\s*=\s*(\[[^\]]*\])/)
+    if (regexMatch) {
+      try {
+        patterns = JSON.parse(regexMatch[1])
+      } catch (error) {}
+    }
+    const reactionMatch = block.match(/reaction\s*=\s*"([^"]*)"/)
+    if (reactionMatch) {
+      reaction = reactionMatch[1]
+    }
+    result.push({
+      patterns,
+      reaction
+    })
+  }
+  return result
+}
+
+const parseChatPrompts = (value) => {
+  const text = getDisplayValue(value)
+  if (!text) {
+    return []
+  }
+  const lines = text.split(/\r?\n/).filter((line) => line.trim())
+  const result = []
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i].trim()
+    const firstColon = line.indexOf(':')
+    const secondColon = firstColon === -1 ? -1 : line.indexOf(':', firstColon + 1)
+    const thirdColon = secondColon === -1 ? -1 : line.indexOf(':', secondColon + 1)
+    let scope = ''
+    let content = line
+    if (thirdColon !== -1) {
+      scope = line.slice(0, thirdColon)
+      content = line.slice(thirdColon + 1).trim()
+    }
+    result.push({
+      scope,
+      content
+    })
+  }
+  return result
 }
 
 watch(
@@ -1129,6 +1523,94 @@ const handleDownload = () => {
 
 .toml-kv-value {
   font-size: 12px;
+  word-break: break-all;
+}
+
+.toml-learning-list,
+.toml-keyword-rules,
+.toml-regex-rules {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toml-learning-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toml-learning-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.toml-keyword-tags,
+.toml-regex-patterns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.toml-keyword-reaction {
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.toml-keyword-tag,
+.toml-regex-tag {
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-all;
+}
+
+.toml-boolean-tag {
+  display: inline-flex;
+}
+
+.toml-chat-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.toml-chat-prompt {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.toml-chat-scope {
+  margin-bottom: 2px;
+}
+
+.toml-chat-scope-tag {
+  max-width: 100%;
+}
+
+.toml-chat-content {
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+}
+
+.toml-array-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.toml-array-tag {
+  max-width: 100%;
+  white-space: normal;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.toml-array-tag :deep(.el-tag__content) {
+  white-space: normal;
   word-break: break-all;
 }
 

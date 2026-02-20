@@ -7,7 +7,7 @@ export const login = (username, password) => {
   params.append('username', username)
   params.append('password', password)
   
-  return apiClient.post('/token', params, {
+  return apiClient.post('/auth/token', params, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -22,7 +22,7 @@ export const register = (username, password, email, verification_code) => {
   params.append('email', email)
   params.append('verification_code', verification_code)
   
-  return apiClient.post('/user/register', params, {
+  return apiClient.post('/auth/user/register', params, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -34,7 +34,7 @@ export const checkRegisterLegality = (username, email) => {
   params.append('username', username)
   params.append('email', email)
 
-  return apiClient.post('/user/check_register', params, {
+  return apiClient.post('/auth/user/check_register', params, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -46,7 +46,7 @@ export const sendVerificationCode = (email) => {
   const params = new URLSearchParams()
   params.append('email', email)
   
-  return apiClient.post('/send_verification_code', params, {
+  return apiClient.post('/auth/send_verification_code', params, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -86,7 +86,7 @@ export const deleteAvatar = () => {
 export const sendResetPasswordCode = (email) => {
   const params = new URLSearchParams()
   params.append('email', email)
-  return apiClient.post('/send_reset_password_code', params, {
+  return apiClient.post('/auth/send_reset_password_code', params, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }
@@ -98,7 +98,7 @@ export const resetPassword = (email, verification_code, new_password) => {
   params.append('email', email)
   params.append('verification_code', verification_code)
   params.append('new_password', new_password)
-  return apiClient.post('/reset_password', params, {
+  return apiClient.post('/auth/reset_password', params, {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded'
     }

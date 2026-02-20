@@ -426,7 +426,7 @@ const fetchUserList = async () => {
       total = response.pagination ? response.pagination.total : items.length
     } else if (response && response.items) {
       items = response.items
-      total = response.total || 0
+      total = response.pagination ? response.pagination.total : (typeof response.total === 'number' ? response.total : items.length)
     }
     userList.value = items
     pagination.total = typeof total === 'number' ? total : 0

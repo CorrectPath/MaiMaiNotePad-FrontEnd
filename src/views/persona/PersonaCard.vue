@@ -315,7 +315,7 @@ import { ElAvatar, ElIcon } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import CommentSection from '@/components/CommentSection.vue'
 import { getPublicPersonaCards, starPersonaCard, unstarPersonaCard, getPersonaCardDetail, checkPersonaCardStarred } from '@/api/persona'
-import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate, normalizeTags } from '@/utils/api'
 import { getAuthorName as sharedGetAuthorName, getAuthorDisplay as sharedGetAuthorDisplay } from '@/utils/author'
 import { usePersonaStore } from '@/stores/persona'
 
@@ -364,11 +364,19 @@ const getPersonaCards = async () => {
     
     const response = await getPublicPersonaCards(params)
     if (response.success) {
-      personaCards.value = response.data.map(card => ({
+      const list = Array.isArray(response.data) ? response.data : []
+      personaCards.value = list.map(card => ({
         ...card,
+        tags: normalizeTags(card.tags),
         isStarred: false
       }))
-      pagination.total = response.total
+      if (response.pagination && typeof response.pagination.total === 'number') {
+        pagination.total = response.pagination.total
+      } else if (typeof response.total === 'number') {
+        pagination.total = response.total
+      } else {
+        pagination.total = personaCards.value.length
+      }
       await checkAllStarStatus()
     } else {
       showErrorNotification(response.message || '获取人设卡列表失败')
@@ -449,7 +457,9 @@ const showCardDetail = async (card) => {
   try {
     const response = await getPersonaCardDetail(card.id)
     if (response.success) {
-      selectedCard.value = response.data
+      const data = response.data || {}
+      data.tags = normalizeTags(data.tags)
+      selectedCard.value = data
       dialogVisible.value = true
     } else {
       showErrorNotification(response.message || '获取人设卡详情失败')

@@ -2,11 +2,11 @@ export const getAuthorName = (item) => {
   if (!item) {
     return '用户已注销'
   }
-  if (item.author) {
-    return item.author
-  }
   if (item.uploader_name) {
     return item.uploader_name
+  }
+  if (item.author) {
+    return item.author
   }
   if (item.author_id) {
     return item.author_id
@@ -21,4 +21,3 @@ export const getAuthorDisplay = (item) => {
   const name = getAuthorName(item)
   return name ? `作者: ${name}` : '作者: 用户已注销'
 }
-

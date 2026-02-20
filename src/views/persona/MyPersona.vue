@@ -297,7 +297,7 @@ import {
   updatePersonaCard,
   addFilesToPersonaCard
 } from '@/api/persona'
-import { handleApiError, formatFileSize, formatDate, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
+import { handleApiError, formatFileSize, formatDate, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification, normalizeTags } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { usePersonaStore } from '@/stores/persona'
 
@@ -370,8 +370,18 @@ const fetchPersona = async () => {
     }
     const response = await getUserPersonaCards(userId, params)
     if (response.success) {
-      personaList.value = response.data || response.items || []
-      pagination.total = response.total || 0
+      const items = response.data || response.items || []
+      personaList.value = items.map((item) => ({
+        ...item,
+        tags: normalizeTags(item.tags)
+      }))
+      if (response.pagination && typeof response.pagination.total === 'number') {
+        pagination.total = response.pagination.total
+      } else if (typeof response.total === 'number') {
+        pagination.total = response.total
+      } else {
+        pagination.total = personaList.value.length
+      }
     } else {
       showErrorNotification(response.message || '获取我的人设卡失败')
     }
@@ -501,9 +511,10 @@ const openEdit = async (pc) => {
     const response = await getPersonaCardDetail(pc.id)
     if (response && response.success) {
       const data = response.data || {}
+      data.tags = normalizeTags(data.tags)
       editingPersona.value = data
       editForm.description = data.description || ''
-      editForm.tags = Array.isArray(data.tags) ? [...data.tags] : []
+      editForm.tags = normalizeTags(data.tags)
       editTagInput.value = ''
       fileList.value = data.files || []
       editDialogVisible.value = true
@@ -520,6 +531,7 @@ const openDetail = async (pc) => {
     const response = await getPersonaCardDetail(pc.id)
     if (response && response.success) {
       const data = response.data || {}
+      data.tags = normalizeTags(data.tags)
       personaStore.setCurrentPersona(data)
       remarkContent.value = data.content || ''
       editingRemark.value = false

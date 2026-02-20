@@ -116,8 +116,15 @@ const loadRecipientsByRole = async (role) => {
     page_size: 500,
     role
   }
-  const { data } = await getAdminUsers(params)
-  const list = (data && data.users) || []
+  const response = await getAdminUsers(params)
+  let list = []
+  if (response && Array.isArray(response.data)) {
+    list = response.data
+  } else if (response && response.data && Array.isArray(response.data)) {
+    list = response.data
+  } else if (response && Array.isArray(response.items)) {
+    list = response.items
+  }
   return list.map((item) => item.id).filter(Boolean)
 }
 

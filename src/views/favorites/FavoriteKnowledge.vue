@@ -259,7 +259,7 @@ import { useFileViewer } from '@/composables/useFileViewer'
 import { getAuthorName, getAuthorDisplay } from '@/utils/author'
 import { getUserStars } from '@/api/user'
 import { unstarKnowledgeBase } from '@/api/knowledge'
-import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate, normalizeTags } from '@/utils/api'
 
 const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
 
@@ -315,7 +315,11 @@ const fetchFavorites = async () => {
     }
     const response = await getUserStars(params)
     if (response && response.success) {
-      favoriteList.value = response.data || []
+      const items = (response.data || []).map((kb) => ({
+        ...kb,
+        tags: normalizeTags(kb.tags)
+      }))
+      favoriteList.value = items
       if (response.pagination && typeof response.pagination.total === 'number') {
         pagination.total = response.pagination.total
       } else {

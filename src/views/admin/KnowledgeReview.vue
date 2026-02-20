@@ -194,7 +194,7 @@ import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import { useFileViewer } from '@/composables/useFileViewer'
 import { getAuthorName } from '@/utils/author'
 import { getPendingKnowledgeReview, approveKnowledgeBaseReview, rejectKnowledgeBaseReview, getKnowledgeBaseDetail } from '@/api/knowledge'
-import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate, normalizeTags } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { useKnowledgeStore } from '@/stores/knowledge'
 
@@ -280,8 +280,18 @@ const fetchReviewList = async () => {
     }
     const response = await getPendingKnowledgeReview(params)
     if (response && response.success) {
-      reviewList.value = response.data || []
-      pagination.total = response.total || 0
+      const items = (response.data || []).map((kb) => ({
+        ...kb,
+        tags: normalizeTags(kb.tags)
+      }))
+      reviewList.value = items
+      if (response.pagination && typeof response.pagination.total === 'number') {
+        pagination.total = response.pagination.total
+      } else if (typeof response.total === 'number') {
+        pagination.total = response.total
+      } else {
+        pagination.total = reviewList.value.length
+      }
     } else {
       showErrorNotification((response && response.message) || '获取待审核知识库失败')
     }
@@ -299,7 +309,9 @@ const showKBDetail = async (kb) => {
   try {
     const response = await getKnowledgeBaseDetail(kb.id)
     if (response && response.success) {
-      selectedKB.value = response.data || {}
+      const data = response.data || {}
+      data.tags = normalizeTags(data.tags)
+      selectedKB.value = data
       detailDialogVisible.value = true
     } else {
       showErrorNotification((response && response.message) || '获取知识库详情失败')

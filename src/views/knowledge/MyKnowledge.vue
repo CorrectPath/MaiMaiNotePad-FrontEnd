@@ -297,7 +297,7 @@ import {
   addFilesToKnowledgeBase,
   deleteFileFromKnowledgeBase
 } from '@/api/knowledge'
-import { handleApiError, formatFileSize, formatDate, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
+import { handleApiError, formatFileSize, formatDate, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification, normalizeTags } from '@/utils/api'
 import { useUserStore } from '@/stores/user'
 import { useKnowledgeStore } from '@/stores/knowledge'
 
@@ -372,8 +372,18 @@ const fetchKnowledge = async () => {
     }
     const response = await getUserKnowledgeBase(currentUserId, params)
     if (response.success) {
-      knowledgeList.value = response.data || response.items || []
-      pagination.total = response.total || 0
+      const items = (response.data || response.items || []).map((kb) => ({
+        ...kb,
+        tags: normalizeTags(kb.tags)
+      }))
+      knowledgeList.value = items
+      if (response.pagination && typeof response.pagination.total === 'number') {
+        pagination.total = response.pagination.total
+      } else if (typeof response.total === 'number') {
+        pagination.total = response.total
+      } else {
+        pagination.total = knowledgeList.value.length
+      }
     } else {
       showErrorNotification(response.message || '获取我的知识库失败')
     }
@@ -499,6 +509,7 @@ const openDetail = async (kb) => {
     const response = await getKnowledgeBaseDetail(kb.id)
     if (response && response.success) {
       const data = response.data || {}
+      data.tags = normalizeTags(data.tags)
       knowledgeStore.setCurrentKB(data)
       remarkContent.value = data.content || ''
       editingRemark.value = false
@@ -520,10 +531,11 @@ const openEdit = async (kb) => {
     const response = await getKnowledgeBaseDetail(kb.id)
     if (response && response.success) {
       const data = response.data || {}
+      data.tags = normalizeTags(data.tags)
       editingKB.value = data
       editForm.name = data.name || ''
       editForm.description = data.description || ''
-      editForm.tags = Array.isArray(data.tags) ? [...data.tags] : []
+      editForm.tags = normalizeTags(data.tags)
       editTagInput.value = ''
       editForm.copyright_owner = data.copyright_owner || ''
       fileList.value = data.files || []

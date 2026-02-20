@@ -272,7 +272,7 @@ import { ElIcon, ElAvatar } from 'element-plus'
 import FileViewerDialog from '@/components/FileViewerDialog.vue'
 import CommentSection from '@/components/CommentSection.vue'
 import { getPublicKnowledgeBase, starKnowledgeBase, unstarKnowledgeBase, getKnowledgeBaseDetail, checkKnowledgeBaseStarred } from '@/api/knowledge'
-import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate } from '@/utils/api'
+import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showInfoNotification, formatFileSize as sharedFormatFileSize, formatDate as sharedFormatDate, normalizeTags } from '@/utils/api'
 import { getAuthorName as sharedGetAuthorName, getAuthorDisplay as sharedGetAuthorDisplay } from '@/utils/author'
 import { useKnowledgeStore } from '@/stores/knowledge'
 
@@ -328,11 +328,19 @@ const getKnowledgeBases = async () => {
     
     const response = await getPublicKnowledgeBase(params)
     if (response.success) {
-      knowledgeBases.value = response.data.map((kb) => ({
+      const list = Array.isArray(response.data) ? response.data : []
+      knowledgeBases.value = list.map((kb) => ({
         ...kb,
+        tags: normalizeTags(kb.tags),
         isStarred: false
       }))
-      pagination.total = response.total
+      if (response.pagination && typeof response.pagination.total === 'number') {
+        pagination.total = response.pagination.total
+      } else if (typeof response.total === 'number') {
+        pagination.total = response.total
+      } else {
+        pagination.total = knowledgeBases.value.length
+      }
       await checkAllStarStatus()
     } else {
       showErrorNotification(response.message || '获取知识库列表失败')
@@ -423,7 +431,9 @@ const showKBDetail = async (kb) => {
   try {
     const response = await getKnowledgeBaseDetail(kb.id)
     if (response.success) {
-      selectedKB.value = response.data
+      const data = response.data || {}
+      data.tags = normalizeTags(data.tags)
+      selectedKB.value = data
       dialogVisible.value = true
     } else {
       showErrorNotification(response.message || '获取知识库详情失败')
