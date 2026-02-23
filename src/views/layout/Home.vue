@@ -483,6 +483,23 @@ const refreshMessages = () => {
   messageStore.refreshMessages()
 }
 
+const startMessagePoll = () => {
+  if (messagePollTimer) {
+    return
+  }
+  messagePollTimer = setInterval(() => {
+    messageStore.fetchMessages()
+  }, 10000)
+}
+
+const stopMessagePoll = () => {
+  if (!messagePollTimer) {
+    return
+  }
+  clearInterval(messagePollTimer)
+  messagePollTimer = null
+}
+
 const handleWebsocketMessage = () => {
   messageStore.refreshMessages()
 }
@@ -572,13 +589,15 @@ onMounted(() => {
   messageStore.fetchMessages()
   websocket.subscribeStatus((status) => {
     connectionStore.setStatus(status)
+    if (status === 'open' || status === 'message') {
+      stopMessagePoll()
+      messageStore.refreshMessages()
+    } else if (status === 'closed' || status === 'error') {
+      startMessagePoll()
+    }
   })
   websocket.init(handleWebsocketMessage)
-  if (!messagePollTimer) {
-    messagePollTimer = setInterval(() => {
-      messageStore.fetchMessages()
-    }, 10000)
-  }
+  startMessagePoll()
 })
 
 const initMyDataCharts = async () => {
@@ -689,10 +708,7 @@ const initTrendChart = () => {
 }
 
 onUnmounted(() => {
-  if (messagePollTimer) {
-    clearInterval(messagePollTimer)
-    messagePollTimer = null
-  }
+  stopMessagePoll()
   websocket.unsubscribeStatus()
   websocket.close()
 })

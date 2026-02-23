@@ -80,7 +80,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from 'vue'
+import { computed } from 'vue'
 import { Download, Star } from '@element-plus/icons-vue'
 import { formatDate as formatDateUtil } from '@/utils/api'
 

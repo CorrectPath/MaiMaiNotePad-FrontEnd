@@ -132,11 +132,40 @@
         </el-tabs>
       </el-card>
     </div>
+    <el-dialog
+      v-model="cropDialogVisible"
+      title="裁剪头像"
+      width="400px"
+      :close-on-click-modal="false"
+      @opened="initCropper"
+      @closed="destroyCropper"
+    >
+      <div class="avatar-cropper-container">
+        <img
+          v-if="cropperImageUrl"
+          :src="cropperImageUrl"
+          ref="cropperImgRef"
+          class="avatar-cropper-image"
+        />
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="handleCropCancel" :disabled="isAvatarUploading">
+            取消
+          </el-button>
+          <el-button type="primary" @click="handleCropConfirm" :loading="isAvatarUploading">
+            确定
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
+import Cropper from 'cropperjs'
+import 'cropperjs/dist/cropper.css'
 import { storeToRefs } from 'pinia'
 import { ElMessageBox } from 'element-plus'
 import { changePassword, uploadAvatar, deleteAvatar } from '@/api/user'
@@ -151,6 +180,13 @@ const userInfo = user
 const isAvatarUploading = ref(false)
 const isAvatarDeleting = ref(false)
 const fileInputRef = ref(null)
+const cropDialogVisible = ref(false)
+const cropperImageUrl = ref('')
+const cropperImgRef = ref(null)
+const selectedAvatarFile = ref(null)
+let cropperInstance = null
+const MAX_AVATAR_SIZE = 2 * 1024 * 1024
+const MAX_AVATAR_DIMENSION = 1024
 
 const passwordForm = reactive({
   current_password: '',
@@ -212,18 +248,142 @@ const triggerAvatarSelect = () => {
   }
 }
 
+const initCropper = () => {
+  if (!cropperImgRef.value) {
+    return
+  }
+  if (cropperInstance) {
+    cropperInstance.destroy()
+    cropperInstance = null
+  }
+  cropperInstance = new Cropper(cropperImgRef.value, {
+    aspectRatio: 1,
+    viewMode: 1,
+    dragMode: 'move',
+    autoCropArea: 1,
+    responsive: true,
+    background: false
+  })
+}
+
+const destroyCropper = () => {
+  if (cropperInstance) {
+    cropperInstance.destroy()
+    cropperInstance = null
+  }
+  cropperImageUrl.value = ''
+  selectedAvatarFile.value = null
+}
+
+const readFileAsDataURL = (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('读取头像文件失败'))
+    reader.readAsDataURL(file)
+  })
+}
+
+const loadImage = (src) => {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => resolve(img)
+    img.onerror = () => reject(new Error('头像图片加载失败'))
+    img.src = src
+  })
+}
+
+const compressAvatarFile = async (file) => {
+  const dataUrl = await readFileAsDataURL(file)
+  const img = await loadImage(dataUrl)
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+  const side = Math.min(img.width, img.height, MAX_AVATAR_DIMENSION)
+  const sx = (img.width - side) / 2
+  const sy = (img.height - side) / 2
+  canvas.width = side
+  canvas.height = side
+  ctx.clearRect(0, 0, side, side)
+  ctx.drawImage(img, sx, sy, side, side, 0, 0, side, side)
+  const toBlob = (quality) => {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('头像压缩失败'))
+          } else {
+            resolve(blob)
+          }
+        },
+        'image/jpeg',
+        quality
+      )
+    })
+  }
+  let quality = 0.9
+  let blob = await toBlob(quality)
+  while (blob.size > MAX_AVATAR_SIZE && quality > 0.4) {
+    quality -= 0.1
+    blob = await toBlob(quality)
+  }
+  const nameWithoutExt = file.name.replace(/\.[^/.]+$/, '')
+  const newName = `${nameWithoutExt || 'avatar'}.jpg`
+  return new File([blob], newName, { type: 'image/jpeg' })
+}
+
 const handleAvatarChange = async (event) => {
   const files = event.target.files
   if (!files || !files.length) {
     return
   }
   const file = files[0]
+  if (!file.type.startsWith('image/')) {
+    showErrorNotification('请选择图片文件')
+    event.target.value = ''
+    return
+  }
+  selectedAvatarFile.value = file
+  cropperImageUrl.value = await readFileAsDataURL(file)
+  cropDialogVisible.value = true
+  event.target.value = ''
+}
+
+const handleCropCancel = () => {
+  cropDialogVisible.value = false
+}
+
+const handleCropConfirm = async () => {
+  if (!cropperInstance) {
+    return
+  }
   isAvatarUploading.value = true
   try {
-    const response = await uploadAvatar(file)
+    const canvas = cropperInstance.getCroppedCanvas({
+      width: MAX_AVATAR_DIMENSION,
+      height: MAX_AVATAR_DIMENSION
+    })
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (b) => {
+          if (!b) {
+            reject(new Error('头像裁剪失败'))
+          } else {
+            resolve(b)
+          }
+        },
+        'image/jpeg'
+      )
+    })
+    const baseName = selectedAvatarFile.value
+      ? selectedAvatarFile.value.name.replace(/\.[^/.]+$/, '')
+      : 'avatar'
+    const croppedFile = new File([blob], `${baseName || 'avatar'}.jpg`, { type: 'image/jpeg' })
+    const processedFile = await compressAvatarFile(croppedFile)
+    const response = await uploadAvatar(processedFile)
     if (response.success) {
       showSuccessNotification(response.message || '头像上传成功')
       await fetchUserInfo()
+      cropDialogVisible.value = false
     } else {
       showErrorNotification(response.message || '头像上传失败')
     }
@@ -231,7 +391,6 @@ const handleAvatarChange = async (event) => {
     showApiErrorNotification(error, '头像上传失败，请检查网络连接')
   } finally {
     isAvatarUploading.value = false
-    event.target.value = ''
   }
 }
 
@@ -386,6 +545,21 @@ onMounted(() => {
 .avatar-actions {
   display: flex;
   gap: 8px;
+}
+
+.avatar-cropper-container {
+  width: 100%;
+  height: 320px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.avatar-cropper-image {
+  max-width: 100%;
+  max-height: 100%;
+  display: block;
 }
 
 .hidden-file-input {

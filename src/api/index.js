@@ -1,6 +1,10 @@
 import axios from 'axios'
 
-const apiBase = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:9278/api`
+export const DEFAULT_API_PORT = 9278
+
+export const apiBase =
+  import.meta.env.VITE_API_BASE_URL ||
+  `${window.location.protocol}//${window.location.hostname}:${DEFAULT_API_PORT}/api`
 
 const apiClient = axios.create({
   baseURL: apiBase,
@@ -54,6 +58,9 @@ apiClient.interceptors.response.use(
     const { response, config } = error
 
     if (response && response.status === 401) {
+      if (config && config.url && config.url.includes('/auth/token')) {
+        return Promise.reject(error)
+      }
       const originalRequest = config
       const refreshToken = localStorage.getItem('refresh_token')
 

@@ -62,40 +62,20 @@
                   </div>
                 </div>
                 <div class="json-table-wrapper">
-                  <el-table
-                    :data="filteredJsonDocsPreview"
-                    size="small"
-                    border
-                    height="100%"
-                  >
-                    <el-table-column
-                      prop="index"
-                      label="#"
-                      width="60"
-                    />
-                    <el-table-column
-                      prop="idx"
-                      label="文档 ID"
-                      min-width="220"
-                      show-overflow-tooltip
-                    />
-                    <el-table-column
-                      prop="passage"
-                      label="文本摘要"
-                      min-width="280"
-                      show-overflow-tooltip
-                    />
-                    <el-table-column
-                      prop="entityCount"
-                      label="实体数"
-                      width="80"
-                    />
-                    <el-table-column
-                      prop="tripleCount"
-                      label="三元组数"
-                      width="90"
-                    />
-                  </el-table>
+                  <el-auto-resizer>
+                    <template #default="{ height, width }">
+                      <el-table-v2
+                        :columns="jsonVirtualColumns"
+                        :data="filteredJsonDocsPreview"
+                        :width="width"
+                        :height="height"
+                        row-key="index"
+                        :row-height="jsonRowHeight"
+                        fixed
+                        @scroll="handleJsonTableScroll"
+                      />
+                    </template>
+                  </el-auto-resizer>
                 </div>
               </div>
               <div
@@ -394,11 +374,12 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick, h } from 'vue'
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api'
 import 'monaco-editor/min/vs/editor/editor.main.css'
 import 'monaco-editor/esm/vs/editor/contrib/folding/browser/folding'
 import { Download, InfoFilled } from '@element-plus/icons-vue'
+import { ElTag, ElPopover, ElTableV2, ElAutoResizer } from 'element-plus'
 import { getTranslationDictionary } from '../api/dictionary'
 
 let jsonFoldingProviderRegistered = false
@@ -782,15 +763,18 @@ const jsonTotalTriples = computed(() => {
   return total
 })
 
-const jsonDocsPreview = computed(() => {
+const jsonRowHeight = 40
+const jsonPageSize = 50
+const jsonDocsLoadedCount = ref(jsonPageSize)
+const isLoadingMoreJsonDocs = ref(false)
+
+const jsonAllRows = computed(() => {
   if (!isKnowledgeJson.value) {
     return []
   }
   const docs = parsedJson.value.docs || []
-  const maxCount = 20
   const result = []
-  const count = Math.min(docs.length, maxCount)
-  for (let i = 0; i < count; i += 1) {
+  for (let i = 0; i < docs.length; i += 1) {
     const doc = docs[i]
     const entities = Array.isArray(doc.extracted_entities) ? doc.extracted_entities.length : 0
     const triples = Array.isArray(doc.extracted_triples) ? doc.extracted_triples.length : 0
@@ -805,11 +789,8 @@ const jsonDocsPreview = computed(() => {
   return result
 })
 
-const filteredJsonDocsPreview = computed(() => {
-  if (!isKnowledgeJson.value) {
-    return []
-  }
-  const source = jsonDocsPreview.value
+const jsonFilteredRows = computed(() => {
+  const source = jsonAllRows.value
   const keyword = docsFilterKeyword.value.trim().toLowerCase()
   if (!keyword) {
     return source
@@ -820,6 +801,205 @@ const filteredJsonDocsPreview = computed(() => {
     return idxValue.includes(keyword) || passageValue.includes(keyword)
   })
 })
+
+const filteredJsonDocsPreview = computed(() => {
+  if (!isKnowledgeJson.value) {
+    return []
+  }
+  const source = jsonFilteredRows.value
+  const count = Math.min(source.length, jsonDocsLoadedCount.value)
+  return source.slice(0, count)
+})
+
+const jsonVirtualColumns = computed(() => {
+  const baseColumns = [
+    {
+      key: 'index',
+      dataKey: 'index',
+      title: '#',
+      width: 60,
+      align: 'center'
+    },
+    {
+      key: 'idx',
+      dataKey: 'idx',
+      title: '文档 ID',
+      width: 180,
+      minWidth: 120,
+      maxWidth: 260,
+      flexGrow: 1
+    },
+    {
+      key: 'passage',
+      dataKey: 'passage',
+      title: '文本摘要',
+      width: 260,
+      minWidth: 200,
+      flexGrow: 2
+    }
+  ]
+  baseColumns.push({
+    key: 'entityCount',
+    dataKey: 'entityCount',
+    title: '实体',
+    width: 100,
+    align: 'center',
+    cellRenderer: ({ rowData }) => {
+      const hasEntities = rowData.entityCount > 0
+      const docIndex = rowData.index - 1
+      const docs = Array.isArray(parsedJson.value.docs) ? parsedJson.value.docs : []
+      const entities = docs[docIndex] && Array.isArray(docs[docIndex].extracted_entities) ? docs[docIndex].extracted_entities : []
+      const title = hasEntities ? `共 ${rowData.entityCount} 个实体` : '无实体'
+      if (!hasEntities) {
+        return h(
+          'span',
+          {
+            class: 'json-entity-count json-entity-count--empty'
+          },
+          '0'
+        )
+      }
+      return h(
+        ElPopover,
+        {
+          placement: 'left',
+          width: 360,
+          trigger: 'click'
+        },
+        {
+          reference: () =>
+            h(
+              ElTag,
+              {
+                size: 'small',
+                type: 'info',
+                effect: 'plain',
+                class: 'json-entity-count-tag',
+                title
+              },
+              () => `${rowData.entityCount} 个`
+            ),
+          default: () =>
+            h(
+              'div',
+              { class: 'json-entity-popover' },
+              [
+                h('div', { class: 'json-entity-popover-title' }, title),
+                h(
+                  'div',
+                  { class: 'json-entity-popover-list' },
+                  entities.map((ent, idx) =>
+                    h(
+                      'div',
+                      { class: 'json-entity-item', key: `${docIndex}-ent-${idx}` },
+                      `${idx + 1}. ${ent}`
+                    )
+                  )
+                )
+              ]
+            )
+        }
+      )
+    }
+  })
+  baseColumns.push({
+    key: 'tripleCount',
+    dataKey: 'tripleCount',
+    title: '三元组',
+    width: 110,
+    align: 'center',
+    cellRenderer: ({ rowData }) => {
+      const hasTriples = rowData.tripleCount > 0
+      const docIndex = rowData.index - 1
+      const docs = Array.isArray(parsedJson.value.docs) ? parsedJson.value.docs : []
+      const triples = docs[docIndex] && Array.isArray(docs[docIndex].extracted_triples) ? docs[docIndex].extracted_triples : []
+      const title = hasTriples ? `共 ${rowData.tripleCount} 个三元组` : '无三元组'
+      if (!hasTriples) {
+        return h(
+          'span',
+          {
+            class: 'json-triple-count json-triple-count--empty'
+          },
+          '0'
+        )
+      }
+      return h(
+        ElPopover,
+        {
+          placement: 'left',
+          width: 420,
+          trigger: 'click'
+        },
+        {
+          reference: () =>
+            h(
+              ElTag,
+              {
+                size: 'small',
+                type: 'success',
+                effect: 'plain',
+                class: 'json-triple-count-tag',
+                title
+              },
+              () => `${rowData.tripleCount} 个`
+            ),
+          default: () =>
+            h(
+              'div',
+              { class: 'json-triple-popover' },
+              [
+                h('div', { class: 'json-triple-popover-title' }, title),
+                h(
+                  'div',
+                  { class: 'json-triple-popover-list' },
+                  triples.map((triple, idx) => {
+                    const [head, relation, tail] = triple
+                    return h(
+                      'div',
+                      { class: 'json-triple-item', key: `${docIndex}-triple-${idx}` },
+                      [
+                        h('span', { class: 'json-triple-index' }, `${idx + 1}. `),
+                        h('span', { class: 'json-triple-entity json-triple-head' }, head),
+                        h('span', { class: 'json-triple-sep' }, ' — '),
+                        h('span', { class: 'json-triple-relation' }, relation),
+                        h('span', { class: 'json-triple-sep' }, ' → '),
+                        h('span', { class: 'json-triple-entity json-triple-tail' }, tail)
+                      ]
+                    )
+                  })
+                )
+              ]
+            )
+        }
+      )
+    }
+  })
+  return baseColumns
+})
+
+const handleJsonTableScroll = ({ scrollTop }) => {
+  if (!isKnowledgeJson.value) {
+    return
+  }
+  const total = jsonFilteredRows.value.length
+  if (jsonDocsLoadedCount.value >= total) {
+    return
+  }
+  const topIndex = Math.floor(scrollTop / jsonRowHeight)
+  const buffer = 10
+  if (topIndex + buffer < jsonDocsLoadedCount.value) {
+    return
+  }
+  if (isLoadingMoreJsonDocs.value) {
+    return
+  }
+  isLoadingMoreJsonDocs.value = true
+  const nextCount = Math.min(jsonDocsLoadedCount.value + jsonPageSize, total)
+  jsonDocsLoadedCount.value = nextCount
+  requestAnimationFrame(() => {
+    isLoadingMoreJsonDocs.value = false
+  })
+}
 
 const translationDict = ref({
   blocks: {
@@ -1406,6 +1586,67 @@ const handleDownload = () => {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+.json-entity-count-tag,
+.json-triple-count-tag {
+  cursor: pointer;
+}
+
+.json-entity-count--empty,
+.json-triple-count--empty {
+  color: var(--el-text-color-placeholder);
+}
+
+.json-entity-popover,
+.json-triple-popover {
+  max-height: 320px;
+  overflow: auto;
+}
+
+.json-entity-popover-title,
+.json-triple-popover-title {
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.json-entity-popover-preview {
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
+  margin-bottom: 8px;
+}
+
+.json-entity-popover-list,
+.json-triple-popover-list {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.json-entity-item,
+.json-triple-item {
+  margin-bottom: 4px;
+}
+
+.json-triple-index {
+  color: var(--el-text-color-secondary);
+}
+
+.json-triple-entity {
+  font-weight: 500;
+}
+
+.json-triple-relation {
+  color: var(--el-color-primary);
+}
+
+.json-triple-sep {
+  color: var(--el-text-color-placeholder);
+}
+
+.json-triple-more-tip {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 
 .toml-vertical-container {

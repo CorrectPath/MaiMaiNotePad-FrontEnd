@@ -159,7 +159,7 @@ MaiMaiNotePad-FrontEnd/
 
 Vite 代理配置见 [vite.config.js](./vite.config.js)：
 
-- 将 `/api` 代理到 `http://localhost:9278`
+- 将 `/api` 代理到 `http://localhost:8000`
 - 同时开启 `server.host = true`，方便局域网其它设备访问前端。
 
 ---
@@ -175,13 +175,13 @@ npm install
 
 ### 2. 开发模式启动
 
-确保后端已在 `9278` 端口运行，可以使用一键启动脚本或直接运行 uvicorn：
+确保后端已在 `8000` 端口运行，可以使用一键启动脚本或直接运行 uvicorn：
 
 ```bash
 cd ../MaiMaiNotePad-BackEnd
 ./start_backend.sh
 # 或
-python -m uvicorn main:app --host 0.0.0.0 --port 9278 --reload
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 在前端目录启动开发服务器：

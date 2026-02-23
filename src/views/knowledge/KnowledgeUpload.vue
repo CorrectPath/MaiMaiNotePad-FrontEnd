@@ -283,7 +283,10 @@ const buildFormData = () => {
     formData.append('content', form.content)
   }
   if (form.tags) {
-    const tagsValue = Array.isArray(form.tags) ? form.tags.join(',') : ''
+    const cleanedTags = Array.isArray(form.tags)
+      ? form.tags.filter((item) => item && String(item).trim())
+      : []
+    const tagsValue = cleanedTags.join(',')
     if (tagsValue) {
       formData.append('tags', tagsValue)
     }

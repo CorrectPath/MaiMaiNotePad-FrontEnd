@@ -1,9 +1,63 @@
-import { ElNotification } from 'element-plus'
+import { h } from 'vue'
+import { ElNotification, ElIcon, ElMessage } from 'element-plus'
+import { DocumentCopy } from '@element-plus/icons-vue'
+
+const createNotificationContent = (message) => {
+  const text = typeof message === 'string' ? message : String(message ?? '')
+
+  const handleCopy = async (event) => {
+    if (event && typeof event.stopPropagation === 'function') {
+      event.stopPropagation()
+    }
+    try {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(text)
+      } else {
+        const textarea = document.createElement('textarea')
+        textarea.value = text
+        textarea.style.position = 'fixed'
+        textarea.style.opacity = '0'
+        document.body.appendChild(textarea)
+        textarea.focus()
+        textarea.select()
+        document.execCommand('copy')
+        document.body.removeChild(textarea)
+      }
+      ElMessage.success('已复制到剪贴板')
+    } catch (e) {
+      ElMessage.error('复制失败，请手动复制')
+    }
+  }
+
+  return h(
+    'div',
+    { class: 'mnp-notification-content' },
+    [
+      h('div', { class: 'mnp-notification-text' }, text),
+      h(
+        'button',
+        {
+          type: 'button',
+          class: 'mnp-notification-copy-btn',
+          onClick: handleCopy
+        },
+        [
+          h(
+            ElIcon,
+            { size: 16 },
+            () => h(DocumentCopy)
+          )
+        ]
+      )
+    ]
+  )
+}
 
 const baseNotification = (type, message, options = {}) => {
+  const content = createNotificationContent(message)
   return ElNotification({
     type,
-    message,
+    message: content,
     position: 'bottom-left',
     duration: 4000,
     showClose: true,
@@ -48,15 +102,14 @@ export const handleApiError = (error, defaultMessage = '请求失败') => {
   if (status) {
     extra.push(`状态码 ${status}`)
   }
-  if (requestId) {
-    extra.push(`请求ID ${requestId}`)
-  }
   if (code) {
     extra.push(`错误码 ${code}`)
   }
+  if (requestId) {
+    extra.push(`请求ID ${requestId}`)
+  }
   if (extra.length) {
-    const debugLine = extra.join('，')
-    message = `${message}\n${debugLine}`
+    message = `${message}\n${extra.join('\n')}`
   }
 
   return message
@@ -89,6 +142,8 @@ export const normalizeTags = (tags) => {
   }
   if (Array.isArray(tags)) {
     return tags
+      .map((item) => (item == null ? '' : String(item).trim()))
+      .filter((item) => item)
   }
   if (typeof tags === 'string') {
     const normalized = tags.replace(/，/g, ',')

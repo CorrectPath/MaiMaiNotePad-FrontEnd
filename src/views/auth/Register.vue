@@ -35,7 +35,7 @@
             show-password
           ></el-input>
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
+        <el-form-item label="邮箱" prop="emailLocal">
           <div class="email-input-wrapper">
             <el-input
               v-model="registerForm.emailLocal"
@@ -77,8 +77,9 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { User, Lock, Message, CircleCheck } from '@element-plus/icons-vue'
-import { register, sendVerificationCode as sendVerificationCodeApi, checkRegisterLegality } from '@/api/user'
+import { register, login, sendVerificationCode as sendVerificationCodeApi, checkRegisterLegality } from '@/api/user'
 import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification, showWarningNotification } from '@/utils/api'
+import websocket from '@/utils/websocket'
 
 const router = useRouter()
 const registerFormRef = ref()
@@ -88,7 +89,6 @@ let countdownTimer = null
 const registerForm = reactive({
   username: '',
   password: '',
-  email: '',
   emailLocal: '',
   confirm_password: '',
   verification_code: ''
@@ -118,12 +118,12 @@ const registerRules = {
       trigger: ['blur', 'change']
     }
   ],
-  email: [
+  emailLocal: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     {
       validator: (rule, value, callback) => {
-        const fullEmail = registerForm.emailLocal + '.com'
-        if (!fullEmail) {
+        const fullEmail = value + '.com'
+        if (!value) {
           callback(new Error('请输入邮箱'))
         } else {
           const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -200,23 +200,27 @@ const handleRegister = async () => {
           fullEmail,
           registerForm.verification_code
         )
-        
-        if (response.success) {
-          showSuccessNotification('注册成功')
-          
-          router.push({
-            path: '/login',
-            query: {
-              username: registerForm.username,
-              password: registerForm.password
-            }
-          })
-        } else {
+
+        if (!response.success) {
           showErrorNotification(response.message || '注册失败')
+          return
+        }
+
+        const loginResp = await login(registerForm.username, registerForm.password)
+
+        if (loginResp && loginResp.success && loginResp.data) {
+          localStorage.setItem('access_token', loginResp.data.access_token)
+          localStorage.setItem('refresh_token', loginResp.data.refresh_token)
+          websocket.init()
+          showSuccessNotification('注册成功，已自动登录')
+          router.push('/home')
+        } else {
+          showSuccessNotification('注册成功，请使用账户密码登录')
+          router.push('/login')
         }
       } catch (error) {
         console.error('注册错误:', error)
-        showApiErrorNotification(error, '注册失败，请检查网络连接')
+        showApiErrorNotification(error, '注册或自动登录失败，请稍后重试')
       }
     } else {
       return false

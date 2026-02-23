@@ -10,7 +10,7 @@
         <div class="repo-title-row">
           <span class="repo-name">{{ item.name }}</span>
           <el-tag
-            v-if="item.version"
+            v-if="showVersionTag && item.version"
             size="small"
             type="info"
             effect="dark"
@@ -121,7 +121,6 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits } from 'vue'
 import { Download, Star, Delete, UploadFilled, Edit } from '@element-plus/icons-vue'
 import { formatDate } from '@/utils/api'
 
@@ -133,10 +132,16 @@ const props = defineProps({
   publishTooltip: {
     type: String,
     default: ''
+  },
+  showVersionTag: {
+    type: Boolean,
+    default: true
   }
 })
 
 const emit = defineEmits(['item-click', 'edit-click', 'publish-click', 'delete-click'])
+
+const { showVersionTag } = props
 
 const handleItemClick = (item) => {
   emit('item-click', item)

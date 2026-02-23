@@ -1,3 +1,5 @@
+import { DEFAULT_API_PORT } from '@/api'
+
 const getWsBaseUrl = () => {
   const envBase = import.meta.env.VITE_API_BASE_URL
   if (envBase && typeof envBase === 'string' && envBase.startsWith('http')) {
@@ -9,7 +11,7 @@ const getWsBaseUrl = () => {
   }
   const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://'
   const host = window.location.hostname
-  const port = 9278
+  const port = DEFAULT_API_PORT
   let basePath = envBase && typeof envBase === 'string' && envBase.length > 0 ? envBase : '/api'
   if (!basePath.startsWith('/')) {
     basePath = `/${basePath}`
@@ -60,6 +62,10 @@ const websocket = {
     if (!token) {
       this.socketOpen = false
       notifyStatus('closed')
+      return
+    }
+    if (this.websocket && this.socketOpen) {
+      notifyStatus('open')
       return
     }
     const wsUrl = `${getWsBaseUrl()}ws/${token}`

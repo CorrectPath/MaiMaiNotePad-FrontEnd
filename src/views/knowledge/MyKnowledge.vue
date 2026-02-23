@@ -38,6 +38,7 @@
           <MyRepoList
             :items="sortedKnowledgeList"
             publish-tooltip="申请公开到知识库广场（需审核）"
+            :show-version-tag="false"
             @item-click="openDetail"
             @edit-click="openEdit"
             @publish-click="requestPublish"

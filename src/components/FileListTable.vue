@@ -104,7 +104,7 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, computed } from 'vue'
+import { computed } from 'vue'
 import { View, Download, Delete, Switch } from '@element-plus/icons-vue'
 import { formatFileSize, formatDate } from '@/utils/api'
 

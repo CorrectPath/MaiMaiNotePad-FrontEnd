@@ -346,6 +346,45 @@ const pagination = reactive({
   total: 0
 })
 
+const addTagsFromInput = (source, inputValue) => {
+  if (!inputValue) {
+    return
+  }
+  const normalized = inputValue.replace(/，/g, ',')
+  const parts = normalized.split(',').map((item) => item.trim()).filter((item) => item)
+  if (!parts.length) {
+    return
+  }
+  parts.forEach((tag) => {
+    if (!source.includes(tag)) {
+      source.push(tag)
+    }
+  })
+}
+
+const handleEditTagInputKeyup = (event) => {
+  if (event.key === ',' || event.key === '，') {
+    event.preventDefault()
+    addTagsFromInput(editForm.tags, editTagInput.value)
+    editTagInput.value = ''
+  }
+}
+
+const commitEditTagInput = () => {
+  if (!editTagInput.value) {
+    return
+  }
+  addTagsFromInput(editForm.tags, editTagInput.value)
+  editTagInput.value = ''
+}
+
+const removeEditTag = (tag) => {
+  const index = editForm.tags.indexOf(tag)
+  if (index !== -1) {
+    editForm.tags.splice(index, 1)
+  }
+}
+
 const fetchPersona = async () => {
   if (!user.value || !user.value.id) {
     try {

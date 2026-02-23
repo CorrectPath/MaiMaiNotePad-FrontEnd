@@ -24,6 +24,7 @@
             placeholder="请输入密码"
             :prefix-icon="Lock"
             show-password
+            @keyup.enter="handleLogin"
           ></el-input>
         </el-form-item>
         <el-form-item>
@@ -48,6 +49,7 @@ import { User, Lock } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { login } from '@/api/user'
 import { handleApiError, showApiErrorNotification, showErrorNotification, showSuccessNotification } from '@/utils/api'
+import websocket from '@/utils/websocket'
 
 const router = useRouter()
 const loginFormRef = ref()
@@ -90,17 +92,18 @@ const handleLogin = async () => {
     if (valid) {
       try {
         const response = await login(loginForm.value.username, loginForm.value.password)
-        
+
         if (response.success) {
           localStorage.setItem('access_token', response.data.access_token)
           localStorage.setItem('refresh_token', response.data.refresh_token)
-          
+
           if (loginForm.value.remember) {
             localStorage.setItem('rememberedLogin', JSON.stringify(loginForm.value))
           } else {
             localStorage.removeItem('rememberedLogin')
           }
-          
+
+          websocket.init()
           showSuccessNotification('登录成功')
           router.push('/home')
         } else {
@@ -114,6 +117,15 @@ const handleLogin = async () => {
           (data && data.message) ||
           (data && data.error && data.error.message) ||
           ''
+        const status = response && response.status
+        const errorCode =
+          (data && data.error && data.error.code) ||
+          (data && data.error && data.error.details && data.error.details.code) ||
+          ''
+        if (status === 401 && (errorCode === 'AUTHENTICATION_ERROR' || rawMessage)) {
+          showErrorNotification(rawMessage || '用户名或密码错误')
+          return
+        }
         if (rawMessage && rawMessage.includes('麦麦')) {
           await ElMessageBox.alert(rawMessage, '通知', {
             confirmButtonText: '知道了'
